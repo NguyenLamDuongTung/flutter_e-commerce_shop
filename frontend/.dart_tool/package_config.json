@@ -129,13 +129,13 @@
     },
     {
       "name": "file_picker",
-      "rootUri": "file:///C:/Users/tungn/AppData/Local/Pub/Cache/hosted/pub.dev/file_picker-13.0.0",
+      "rootUri": "file:///C:/Users/tungn/AppData/Local/Pub/Cache/hosted/pub.dev/file_picker-13.1.0",
       "packageUri": "lib/",
       "languageVersion": "3.10"
     },
     {
       "name": "file_picker_darwin",
-      "rootUri": "file:///C:/Users/tungn/AppData/Local/Pub/Cache/hosted/pub.dev/file_picker_darwin-2.0.0",
+      "rootUri": "file:///C:/Users/tungn/AppData/Local/Pub/Cache/hosted/pub.dev/file_picker_darwin-2.1.0",
       "packageUri": "lib/",
       "languageVersion": "3.10"
     },
@@ -746,7 +746,7 @@
       "languageVersion": "3.4"
     },
     {
-      "name": "frontend",
+      "name": "flutter_shop_app",
       "rootUri": "../",
       "packageUri": "lib/",
       "languageVersion": "3.13"

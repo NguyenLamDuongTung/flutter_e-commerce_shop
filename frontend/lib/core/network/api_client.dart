@@ -7,9 +7,8 @@ import '../storage/auth_storage.dart';
 import 'api_exception.dart';
 
 class ApiClient {
-  ApiClient({required AuthStorage authStorage, http.Client? httpClient})
-    : _authStorage = authStorage,
-      _httpClient = httpClient ?? http.Client();
+  ApiClient({required this._authStorage, http.Client? httpClient})
+    : _httpClient = httpClient ?? http.Client();
 
   final AuthStorage _authStorage;
   final http.Client _httpClient;

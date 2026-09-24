@@ -4,31 +4,27 @@ import '../../../core/storage/auth_storage.dart';
 import '../domain/app_user.dart';
 
 class ApiAuthRepository {
-  const ApiAuthRepository({
-    required ApiClient apiClient,
-    required AuthStorage authStorage,
-  }) : _apiClient = apiClient,
-       _authStorage = authStorage;
+  ApiAuthRepository({required this.apiClient, required this.authStorage});
 
-  final ApiClient _apiClient;
-  final AuthStorage _authStorage;
+  final ApiClient apiClient;
+  final AuthStorage authStorage;
 
   Future<AppUser?> restoreSession() async {
-    final token = await _authStorage.readToken();
+    final token = await authStorage.readToken();
 
     if (token == null || token.isEmpty) {
       return null;
     }
 
     try {
-      final response = await _apiClient.get('/auth/me', authenticated: true);
+      final response = await apiClient.get('/auth/me', authenticated: true);
 
       final data = response['data'] as Map<String, dynamic>;
 
       return AppUser.fromJson(data['user'] as Map<String, dynamic>);
     } on ApiException catch (error) {
       if (error.statusCode == 401 || error.statusCode == 403) {
-        await _authStorage.clearToken();
+        await authStorage.clearToken();
         return null;
       }
 
@@ -40,7 +36,7 @@ class ApiAuthRepository {
     required String email,
     required String password,
   }) async {
-    final response = await _apiClient.post(
+    final response = await apiClient.post(
       '/auth/login',
       body: {'email': email.trim(), 'password': password},
     );
@@ -54,7 +50,7 @@ class ApiAuthRepository {
     required String password,
     String phone = '',
   }) async {
-    final response = await _apiClient.post(
+    final response = await apiClient.post(
       '/auth/register',
       body: {
         'fullName': fullName.trim(),
@@ -72,7 +68,7 @@ class ApiAuthRepository {
     String? phone,
     String? address,
   }) async {
-    final response = await _apiClient.put(
+    final response = await apiClient.put(
       '/auth/profile',
       authenticated: true,
       body: {
@@ -88,7 +84,7 @@ class ApiAuthRepository {
   }
 
   Future<void> logout() {
-    return _authStorage.clearToken();
+    return authStorage.clearToken();
   }
 
   Future<AppUser> _saveSession(Map<String, dynamic> response) async {
@@ -100,7 +96,7 @@ class ApiAuthRepository {
       throw const ApiException('The server did not return an access token.');
     }
 
-    await _authStorage.saveToken(token);
+    await authStorage.saveToken(token);
 
     return AppUser.fromJson(data['user'] as Map<String, dynamic>);
   }

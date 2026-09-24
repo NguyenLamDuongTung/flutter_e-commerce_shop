@@ -6,6 +6,8 @@ import '../core/network/api_client.dart';
 import '../core/storage/auth_storage.dart';
 import '../features/auth/data/api_auth_repository.dart';
 import '../features/auth/domain/app_user.dart';
+import '../features/products/data/api_product_repository.dart';
+import '../features/products/domain/product.dart';
 
 final authStorageProvider = Provider<AuthStorage>((ref) {
   return AuthStorage();
@@ -17,6 +19,35 @@ final apiClientProvider = Provider<ApiClient>((ref) {
   ref.onDispose(client.dispose);
 
   return client;
+});
+
+final productRepositoryProvider = Provider<ApiProductRepository>((ref) {
+  return ApiProductRepository(ref.watch(apiClientProvider));
+});
+
+final categoriesProvider = FutureProvider<List<ProductCategory>>((ref) {
+  return ref.watch(productRepositoryProvider).getCategories();
+});
+
+typedef ProductRequest = ({
+  String? category,
+  String search,
+  bool? featured,
+  int limit,
+});
+
+final productsProvider = FutureProvider.family<List<Product>, ProductRequest>((
+  ref,
+  request,
+) {
+  return ref
+      .watch(productRepositoryProvider)
+      .getProducts(
+        category: request.category,
+        search: request.search,
+        featured: request.featured,
+        limit: request.limit,
+      );
 });
 
 final authRepositoryProvider = Provider<ApiAuthRepository>((ref) {

@@ -1,19 +1,15 @@
-# Secrets
-.env
-.env.*
-!.env.example
+# Local secrets
 backend/.env
 
-# Node.js
+# Node
 backend/node_modules/
 backend/npm-debug.log*
+
+# Uploaded product files
 backend/uploads/products/*
 !backend/uploads/products/.gitkeep
 
-# Old local database
-backend/data/database.json
-
-# Flutter
+# Flutter generated files
 frontend/.dart_tool/
 frontend/.flutter-plugins
 frontend/.flutter-plugins-dependencies
@@ -21,14 +17,10 @@ frontend/.packages
 frontend/build/
 frontend/coverage/
 
-# IDE
+# IDE and operating system
 .vscode/
 .idea/
 *.iml
-
-# Operating system
 .DS_Store
 Thumbs.db
-
-# Logs
 *.log

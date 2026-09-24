@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../features/admin/presentation/admin_dashboard_page.dart';
 import '../features/admin/presentation/admin_login_page.dart';
+import '../features/admin/presentation/admin_section_page.dart';
+import '../features/admin/presentation/admin_products_page.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/auth/presentation/register_page.dart';
 import '../features/home/presentation/shop_home_page.dart';
@@ -20,9 +22,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       final authState = ref.read(authControllerProvider);
       final path = state.uri.path;
 
-      if (authState.isLoading) {
-        return path == '/loading' ? null : '/loading';
-      }
+      // Keep the current page while login/session restoration is running.
+      // Redirecting to /loading here unmounts the login form before the
+      // authentication request completes and can send the user back home.
+      if (authState.isLoading) return null;
 
       final user = authState.value;
 
@@ -34,13 +37,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           path.startsWith('/checkout') ||
           path.startsWith('/account');
 
-      if (path == '/loading') {
-        if (user?.isAdmin == true) {
-          return '/admin';
-        }
-
-        return '/';
-      }
+      if (path == '/loading') return user?.isAdmin == true ? '/admin' : '/';
 
       // Bảo vệ tất cả trang admin, ngoại trừ trang đăng nhập.
       if (isAdminPath && !isAdminLogin) {
@@ -103,6 +100,34 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin',
         builder: (context, state) => const AdminDashboardPage(),
+      ),
+      GoRoute(
+        path: '/admin/products',
+        builder: (context, state) => const AdminProductsPage(),
+      ),
+      GoRoute(
+        path: '/admin/orders',
+        builder: (context, state) => const AdminSectionPage(
+          title: 'Quản lý đơn hàng',
+          description: 'Theo dõi và cập nhật trạng thái đơn hàng khách hàng.',
+          icon: Icons.receipt_long_outlined,
+        ),
+      ),
+      GoRoute(
+        path: '/admin/customers',
+        builder: (context, state) => const AdminSectionPage(
+          title: 'Quản lý khách hàng',
+          description: 'Xem tài khoản, lịch sử mua hàng và hoạt động thành viên.',
+          icon: Icons.people_alt_outlined,
+        ),
+      ),
+      GoRoute(
+        path: '/admin/analytics',
+        builder: (context, state) => const AdminSectionPage(
+          title: 'Doanh thu và phân tích',
+          description: 'Theo dõi doanh thu, sản phẩm bán chạy và xu hướng bán hàng.',
+          icon: Icons.query_stats_rounded,
+        ),
       ),
     ],
   );

@@ -17,7 +17,7 @@ class AppUser {
   final String? address;
   final DateTime? createdAt;
 
-  bool get isAdmin => role == 'admin';
+  bool get isAdmin => role.toLowerCase() == 'admin';
   bool get isCustomer => role == 'customer';
 
   factory AppUser.fromJson(Map<String, dynamic> json) {

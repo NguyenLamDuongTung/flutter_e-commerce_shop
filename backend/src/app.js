@@ -38,11 +38,35 @@ app.use(
 
 app.use(compression());
 
+const configuredOrigins = env.clientUrl
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+const developmentOrigins = [
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+];
+
+const allowedOrigins = new Set([
+  ...configuredOrigins,
+  ...(env.nodeEnv === 'development' ? developmentOrigins : []),
+]);
+
 app.use(
   cors({
-    origin: env.clientUrl,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    origin(origin, callback) {
+      // Requests without Origin are server-to-server tools such as curl.
+      if (!origin || allowedOrigins.has(origin.replace(/\/$/, ''))) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`CORS blocked origin: ${origin}`));
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 204,
   }),
 );
 

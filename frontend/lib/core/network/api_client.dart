@@ -7,8 +7,9 @@ import '../storage/auth_storage.dart';
 import 'api_exception.dart';
 
 class ApiClient {
-  ApiClient({required this._authStorage, http.Client? httpClient})
-    : _httpClient = httpClient ?? http.Client();
+  ApiClient({required AuthStorage authStorage, http.Client? httpClient})
+    : _authStorage = authStorage,
+      _httpClient = httpClient ?? http.Client();
 
   final AuthStorage _authStorage;
   final http.Client _httpClient;
@@ -76,6 +77,53 @@ class ApiClient {
       body: body,
       authenticated: authenticated,
     );
+  }
+
+  Future<Map<String, dynamic>> multipart(
+    String path, {
+    required String method,
+    required Map<String, String> fields,
+    List<({String name, List<int> bytes})> files = const [],
+  }) async {
+    final normalizedPath = path.startsWith('/') ? path : '/$path';
+    final request = http.MultipartRequest(
+      method,
+      Uri.parse('${AppConfig.apiBaseUrl}$normalizedPath'),
+    );
+    final token = await _authStorage.readToken();
+
+    if (token == null || token.isEmpty) {
+      throw const ApiException(
+        'Your session has expired. Please sign in again.',
+        statusCode: 401,
+      );
+    }
+
+    request.headers.addAll({
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+    request.fields.addAll(fields);
+
+    for (final file in files) {
+      request.files.add(
+        http.MultipartFile.fromBytes('images', file.bytes, filename: file.name),
+      );
+    }
+
+    try {
+      final streamed = await _httpClient.send(request).timeout(
+        const Duration(seconds: 45),
+      );
+      return _decodeResponse(await http.Response.fromStream(streamed));
+    } on ApiException {
+      rethrow;
+    } catch (error) {
+      throw ApiException(
+        'Cannot connect to the server. Make sure the backend is running.',
+        details: error,
+      );
+    }
   }
 
   Future<Map<String, dynamic>> _request({

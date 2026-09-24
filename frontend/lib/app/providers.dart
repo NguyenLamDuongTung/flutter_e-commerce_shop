@@ -6,6 +6,8 @@ import '../core/network/api_client.dart';
 import '../core/storage/auth_storage.dart';
 import '../features/auth/data/api_auth_repository.dart';
 import '../features/auth/domain/app_user.dart';
+import '../features/admin/data/admin_dashboard_repository.dart';
+import '../features/admin/data/admin_product_repository.dart';
 import '../features/products/data/api_product_repository.dart';
 import '../features/products/domain/product.dart';
 
@@ -23,6 +25,18 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 
 final productRepositoryProvider = Provider<ApiProductRepository>((ref) {
   return ApiProductRepository(ref.watch(apiClientProvider));
+});
+
+final adminDashboardRepositoryProvider = Provider<AdminDashboardRepository>((ref) {
+  return AdminDashboardRepository(ref.watch(apiClientProvider));
+});
+
+final adminDashboardProvider = FutureProvider<AdminDashboardData>((ref) {
+  return ref.watch(adminDashboardRepositoryProvider).getDashboard();
+});
+
+final adminProductRepositoryProvider = Provider<AdminProductRepository>((ref) {
+  return AdminProductRepository(ref.watch(apiClientProvider));
 });
 
 final categoriesProvider = FutureProvider<List<ProductCategory>>((ref) {

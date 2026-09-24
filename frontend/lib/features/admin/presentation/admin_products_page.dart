@@ -281,7 +281,7 @@ class _ProductDialogState extends ConsumerState<_ProductDialog> {
           featured: _featured,
           isActive: _active,
         ),
-        images: _images.map((file) => (name: file.name, bytes: file.bytes!)).toList(),
+        images: _images.map((file) => (name: file.name, bytes: file.bytes)).toList(),
       );
       if (mounted) Navigator.pop(context, true);
     } catch (error) {

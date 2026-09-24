@@ -33,7 +33,8 @@ class AdminDashboardPage extends ConsumerWidget {
             child: SafeArea(
               child: RefreshIndicator(
                 onRefresh: () async {
-                  await ref.refresh(adminDashboardProvider.future);
+                  final refreshed = ref.refresh(adminDashboardProvider.future);
+                  await refreshed;
                 },
                 child: CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),

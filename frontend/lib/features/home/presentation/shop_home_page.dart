@@ -6,7 +6,7 @@ import '../../../app/providers.dart';
 import '../../../core/config/app_config.dart';
 import '../../products/presentation/widgets/product_card.dart';
 import '../../products/presentation/widgets/product_skeleton.dart';
-
+import 'widgets/hero_banner.dart';
 class ShopHomePage extends ConsumerStatefulWidget {
   const ShopHomePage({super.key});
 
@@ -58,7 +58,7 @@ class _ShopHomePageState extends ConsumerState<ShopHomePage> {
                 child: ListView(
                   controller: _scrollController,
                   children: [
-                    const _HeroBanner(),
+                    const HeroBanner(),
                     const SizedBox(height: 42),
                     if (_search.isNotEmpty)
                       _ProductSection(
@@ -247,72 +247,6 @@ class _HeaderItem extends StatelessWidget {
           label,
           style: const TextStyle(color: Colors.white, fontSize: 16),
         ),
-      ),
-    );
-  }
-}
-
-class _HeroBanner extends ConsumerWidget {
-  const _HeroBanner();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final products = ref.watch(
-      productsProvider((category: null, search: '', featured: true, limit: 1)),
-    );
-
-    return Container(
-      height: 510,
-      color: const Color(0xFFF6F6F8),
-      child: products.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => const Center(child: Text('NOVA STORE')),
-        data: (items) {
-          final product = items.isEmpty ? null : items.first;
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 50),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        product?.name ?? 'Thiết bị mới',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 42,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        product?.shortDescription ??
-                            'Công nghệ, đơn giản và đẹp.',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 22),
-                      ),
-                      const SizedBox(height: 26),
-                      OutlinedButton(
-                        onPressed: () {},
-                        child: const Text('Khám phá ngay'),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: product?.primaryImage == null
-                      ? const Icon(Icons.devices, size: 220)
-                      : Image.network(
-                          AppConfig.resolveImageUrl(product!.primaryImage),
-                          fit: BoxFit.contain,
-                        ),
-                ),
-              ],
-            ),
-          );
-        },
       ),
     );
   }

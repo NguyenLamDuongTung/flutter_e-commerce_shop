@@ -12,6 +12,7 @@ import productRoutes from './routes/product.routes.js';
 import cartRoutes from './routes/cart.routes.js';
 import orderRoutes from './routes/order.routes.js';
 import heroSlideRoutes from './routes/hero-slide.routes.js';
+import adminHeroSlideRoutes from './routes/admin-hero-slide.routes.js';
 
 import { env } from './config/env.js';
 import {
@@ -103,6 +104,7 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 
 app.use('/api/admin/products', adminProductRoutes);
+app.use('/api/admin/hero-slides', adminHeroSlideRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.use(notFoundHandler);

@@ -18,10 +18,38 @@ fs.mkdirSync(uploadDirectory, {
 
 const allowedMimeTypes = new Set([
   'image/jpeg',
+  'image/jpg',
   'image/png',
   'image/webp',
   'image/avif',
 ]);
+
+const allowedExtensions = new Set([
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.webp',
+  '.avif',
+]);
+
+const extensionByMimeType = {
+  'image/jpeg': '.jpg',
+  'image/jpg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/avif': '.avif',
+};
+
+function getFileExtension(file) {
+  const originalExtension = path
+    .extname(file.originalname)
+    .toLowerCase();
+
+  return (
+    extensionByMimeType[file.mimetype] ??
+    originalExtension
+  );
+}
 
 const storage = multer.diskStorage({
   destination(request, file, callback) {
@@ -29,16 +57,7 @@ const storage = multer.diskStorage({
   },
 
   filename(request, file, callback) {
-    const extensionByMimeType = {
-      'image/jpeg': '.jpg',
-      'image/png': '.png',
-      'image/webp': '.webp',
-      'image/avif': '.avif',
-    };
-
-    const extension =
-      extensionByMimeType[file.mimetype] ??
-      path.extname(file.originalname).toLowerCase();
+    const extension = getFileExtension(file);
 
     callback(
       null,
@@ -56,13 +75,35 @@ export const uploadProductImages = multer({
   },
 
   fileFilter(request, file, callback) {
-    if (!allowedMimeTypes.has(file.mimetype)) {
+    const extension = path
+      .extname(file.originalname)
+      .toLowerCase();
+
+    const hasValidExtension =
+      allowedExtensions.has(extension);
+
+    const hasValidMimeType =
+      allowedMimeTypes.has(file.mimetype);
+
+    /*
+      Một số trình duyệt gửi file Flutter Web dưới dạng
+      application/octet-stream. Trong trường hợp đó, backend
+      kiểm tra phần mở rộng file.
+    */
+    const isBrowserBinary =
+      file.mimetype === 'application/octet-stream';
+
+    if (
+      !hasValidExtension ||
+      (!hasValidMimeType && !isBrowserBinary)
+    ) {
       callback(
         new HttpError(
           400,
           'Only JPG, PNG, WebP and AVIF images are allowed.',
         ),
       );
+
       return;
     }
 

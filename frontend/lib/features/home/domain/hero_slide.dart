@@ -31,13 +31,10 @@ class HeroSlide {
       productName: json['productName']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
       subtitle: json['subtitle']?.toString() ?? '',
-      buttonText:
-          json['buttonText']?.toString() ?? 'Khám phá ngay',
+      buttonText: json['buttonText']?.toString() ?? 'Khám phá ngay',
       imageUrl: json['imageUrl']?.toString(),
-      displayOrder:
-          (json['displayOrder'] as num?)?.toInt() ?? 0,
-      isActive:
-          json['isActive'] == true || json['isActive'] == 1,
+      displayOrder: (json['displayOrder'] as num?)?.toInt() ?? 0,
+      isActive: json['isActive'] == true || json['isActive'] == 1,
     );
   }
 }

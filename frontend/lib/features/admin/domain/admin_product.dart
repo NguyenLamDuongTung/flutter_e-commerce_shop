@@ -81,13 +81,12 @@ class AdminProduct {
 
     final images = rawImages is List
         ? rawImages
-            .whereType<Map>()
-            .map(
-              (item) => AdminProductImage.fromJson(
-                Map<String, dynamic>.from(item),
-              ),
-            )
-            .toList()
+              .whereType<Map>()
+              .map(
+                (item) =>
+                    AdminProductImage.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
         : <AdminProductImage>[];
 
     return AdminProduct(
@@ -141,13 +140,12 @@ class AdminProductPage {
 
     final items = rawItems is List
         ? rawItems
-            .whereType<Map>()
-            .map(
-              (item) => AdminProduct.fromJson(
-                Map<String, dynamic>.from(item),
-              ),
-            )
-            .toList()
+              .whereType<Map>()
+              .map(
+                (item) =>
+                    AdminProduct.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
         : <AdminProduct>[];
 
     final pagination = json['pagination'] is Map

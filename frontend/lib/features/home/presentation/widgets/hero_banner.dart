@@ -13,8 +13,7 @@ class HeroBanner extends ConsumerStatefulWidget {
   const HeroBanner({super.key});
 
   @override
-  ConsumerState<HeroBanner> createState() =>
-      _HeroBannerState();
+  ConsumerState<HeroBanner> createState() => _HeroBannerState();
 }
 
 class _HeroBannerState extends ConsumerState<HeroBanner> {
@@ -28,25 +27,19 @@ class _HeroBannerState extends ConsumerState<HeroBanner> {
   void initState() {
     super.initState();
 
-    _timer = Timer.periodic(
-      const Duration(seconds: 4),
-      (_) {
-        if (!mounted ||
-            _itemCount < 2 ||
-            !_controller.hasClients) {
-          return;
-        }
+    _timer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || _itemCount < 2 || !_controller.hasClients) {
+        return;
+      }
 
-        final nextIndex =
-            (_currentIndex + 1) % _itemCount;
+      final nextIndex = (_currentIndex + 1) % _itemCount;
 
-        _controller.animateToPage(
-          nextIndex,
-          duration: const Duration(milliseconds: 650),
-          curve: Curves.easeInOutCubic,
-        );
-      },
-    );
+      _controller.animateToPage(
+        nextIndex,
+        duration: const Duration(milliseconds: 650),
+        curve: Curves.easeInOutCubic,
+      );
+    });
   }
 
   @override
@@ -74,9 +67,7 @@ class _HeroBannerState extends ConsumerState<HeroBanner> {
       child: slides.when(
         loading: () => const ColoredBox(
           color: Color(0xFFF0F0F2),
-          child: Center(
-            child: CircularProgressIndicator(),
-          ),
+          child: Center(child: CircularProgressIndicator()),
         ),
         error: (error, stackTrace) => Center(
           child: TextButton.icon(
@@ -89,9 +80,7 @@ class _HeroBannerState extends ConsumerState<HeroBanner> {
         ),
         data: (items) {
           if (items.isEmpty) {
-            return const Center(
-              child: Text('Chưa có banner được hiển thị.'),
-            );
+            return const Center(child: Text('Chưa có banner được hiển thị.'));
           }
 
           _itemCount = items.length;
@@ -111,9 +100,7 @@ class _HeroBannerState extends ConsumerState<HeroBanner> {
                   });
                 },
                 itemBuilder: (context, index) {
-                  return _HeroSlideView(
-                    slide: items[index],
-                  );
+                  return _HeroSlideView(slide: items[index]);
                 },
               ),
               if (items.length > 1) ...[
@@ -125,8 +112,7 @@ class _HeroBannerState extends ConsumerState<HeroBanner> {
                     child: IconButton.filledTonal(
                       onPressed: () {
                         _goTo(
-                          (_currentIndex - 1 + items.length) %
-                              items.length,
+                          (_currentIndex - 1 + items.length) % items.length,
                         );
                       },
                       icon: const Icon(Icons.chevron_left),
@@ -140,10 +126,7 @@ class _HeroBannerState extends ConsumerState<HeroBanner> {
                   child: Center(
                     child: IconButton.filledTonal(
                       onPressed: () {
-                        _goTo(
-                          (_currentIndex + 1) %
-                              items.length,
-                        );
+                        _goTo((_currentIndex + 1) % items.length);
                       },
                       icon: const Icon(Icons.chevron_right),
                     ),
@@ -154,27 +137,21 @@ class _HeroBannerState extends ConsumerState<HeroBanner> {
                   right: 0,
                   bottom: 18,
                   child: Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
                       items.length,
                       (index) => GestureDetector(
                         onTap: () => _goTo(index),
                         child: AnimatedContainer(
-                          duration:
-                              const Duration(milliseconds: 250),
-                          width:
-                              index == _currentIndex ? 28 : 8,
+                          duration: const Duration(milliseconds: 250),
+                          width: index == _currentIndex ? 28 : 8,
                           height: 8,
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                          ),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
                           decoration: BoxDecoration(
                             color: index == _currentIndex
                                 ? Colors.black
                                 : Colors.black26,
-                            borderRadius:
-                                BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                       ),
@@ -191,22 +168,16 @@ class _HeroBannerState extends ConsumerState<HeroBanner> {
 }
 
 class _HeroSlideView extends StatelessWidget {
-  const _HeroSlideView({
-    required this.slide,
-  });
+  const _HeroSlideView({required this.slide});
 
   final HeroSlide slide;
 
   @override
   Widget build(BuildContext context) {
-    final isMobile =
-        MediaQuery.sizeOf(context).width < 720;
+    final isMobile = MediaQuery.sizeOf(context).width < 720;
 
     final content = Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 46,
-        vertical: 32,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 46, vertical: 32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -225,10 +196,7 @@ class _HeroSlideView extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: isMobile ? 17 : 22,
-              height: 1.4,
-            ),
+            style: TextStyle(fontSize: isMobile ? 17 : 22, height: 1.4),
           ),
           const SizedBox(height: 26),
           OutlinedButton(
@@ -244,26 +212,15 @@ class _HeroSlideView extends StatelessWidget {
     final image = Container(
       color: const Color(0xFFE6E6E8),
       padding: const EdgeInsets.all(26),
-      child: slide.imageUrl == null ||
-              slide.imageUrl!.trim().isEmpty
-          ? const Center(
-              child: Icon(Icons.devices, size: 170),
-            )
+      child: slide.imageUrl == null || slide.imageUrl!.trim().isEmpty
+          ? const Center(child: Icon(Icons.devices, size: 170))
           : CachedNetworkImage(
-              imageUrl: AppConfig.resolveImageUrl(
-                slide.imageUrl,
-              ),
+              imageUrl: AppConfig.resolveImageUrl(slide.imageUrl),
               fit: BoxFit.contain,
               placeholder: (context, url) =>
-                  const Center(
-                child: CircularProgressIndicator(),
-              ),
-              errorWidget: (context, url, error) =>
-                  const Center(
-                child: Icon(
-                  Icons.broken_image_outlined,
-                  size: 70,
-                ),
+                  const Center(child: CircularProgressIndicator()),
+              errorWidget: (context, url, error) => const Center(
+                child: Icon(Icons.broken_image_outlined, size: 70),
               ),
             ),
     );

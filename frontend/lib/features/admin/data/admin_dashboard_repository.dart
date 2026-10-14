@@ -35,11 +35,17 @@ class AdminDashboardData {
       ),
       recentOrders: (json['recentOrders'] as List? ?? const [])
           .whereType<Map>()
-          .map((item) => AdminRecentOrder.fromJson(Map<String, dynamic>.from(item)))
+          .map(
+            (item) =>
+                AdminRecentOrder.fromJson(Map<String, dynamic>.from(item)),
+          )
           .toList(),
       monthlySales: (json['monthlySales'] as List? ?? const [])
           .whereType<Map>()
-          .map((item) => AdminMonthlySale.fromJson(Map<String, dynamic>.from(item)))
+          .map(
+            (item) =>
+                AdminMonthlySale.fromJson(Map<String, dynamic>.from(item)),
+          )
           .toList(),
     );
   }
@@ -126,6 +132,7 @@ class AdminMonthlySale {
   }
 }
 
-int _int(dynamic value) => value is num ? value.toInt() : int.tryParse('$value') ?? 0;
+int _int(dynamic value) =>
+    value is num ? value.toInt() : int.tryParse('$value') ?? 0;
 double _double(dynamic value) =>
     value is num ? value.toDouble() : double.tryParse('$value') ?? 0;

@@ -20,10 +20,7 @@ class HeroSlideRepository {
     return _parse(response['data']);
   }
 
-  Future<void> save({
-    int? id,
-    required HeroSlideInput input,
-  }) async {
+  Future<void> save({int? id, required HeroSlideInput input}) async {
     if (id == null) {
       await _apiClient.post(
         '/admin/hero-slides',
@@ -49,20 +46,13 @@ class HeroSlideRepository {
   }
 
   Future<void> delete(int id) async {
-    await _apiClient.delete(
-      '/admin/hero-slides/$id',
-      authenticated: true,
-    );
+    await _apiClient.delete('/admin/hero-slides/$id', authenticated: true);
   }
 
   List<HeroSlide> _parse(dynamic rawData) {
     return (rawData as List? ?? const [])
         .whereType<Map>()
-        .map(
-          (item) => HeroSlide.fromJson(
-            Map<String, dynamic>.from(item),
-          ),
-        )
+        .map((item) => HeroSlide.fromJson(Map<String, dynamic>.from(item)))
         .toList();
   }
 }

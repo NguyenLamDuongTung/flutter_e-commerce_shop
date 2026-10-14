@@ -1,11 +1,10 @@
 class AppConfig {
   const AppConfig._();
 
-  static const String apiBaseUrl =
-      String.fromEnvironment(
-        'API_BASE_URL',
-        defaultValue: 'http://localhost:8081/api',
-      );
+  static const String apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:8081/api',
+  );
 
   static String get backendBaseUrl {
     final uri = Uri.parse(apiBaseUrl);
@@ -31,8 +30,7 @@ class AppConfig {
       return value;
     }
 
-    final normalizedPath =
-        value.startsWith('/') ? value : '/$value';
+    final normalizedPath = value.startsWith('/') ? value : '/$value';
 
     return '$backendBaseUrl$normalizedPath';
   }

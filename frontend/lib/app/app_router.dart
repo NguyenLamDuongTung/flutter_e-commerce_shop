@@ -65,9 +65,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     errorBuilder: (context, state) {
       return Scaffold(
-        body: Center(
-          child: Text('Page not found: ${state.uri.path}'),
-        ),
+        body: Center(child: Text('Page not found: ${state.uri.path}')),
       );
     },
     routes: [
@@ -75,20 +73,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/loading',
         builder: (context, state) {
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         },
       ),
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const ShopHomePage(),
-      ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginPage(),
-      ),
+      GoRoute(path: '/', builder: (context, state) => const ShopHomePage()),
+      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterPage(),
@@ -117,7 +107,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/customers',
         builder: (context, state) => const AdminSectionPage(
           title: 'Quản lý khách hàng',
-          description: 'Xem tài khoản, lịch sử mua hàng và hoạt động thành viên.',
+          description:
+              'Xem tài khoản, lịch sử mua hàng và hoạt động thành viên.',
           icon: Icons.people_alt_outlined,
         ),
       ),
@@ -125,7 +116,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/analytics',
         builder: (context, state) => const AdminSectionPage(
           title: 'Doanh thu và phân tích',
-          description: 'Theo dõi doanh thu, sản phẩm bán chạy và xu hướng bán hàng.',
+          description:
+              'Theo dõi doanh thu, sản phẩm bán chạy và xu hướng bán hàng.',
           icon: Icons.query_stats_rounded,
         ),
       ),

@@ -12,6 +12,7 @@ import '../features/products/data/api_product_repository.dart';
 import '../features/products/domain/product.dart';
 import '../features/home/data/hero_slide_repository.dart';
 import '../features/home/domain/hero_slide.dart';
+
 final authStorageProvider = Provider<AuthStorage>((ref) {
   return AuthStorage();
 });
@@ -28,26 +29,21 @@ final productRepositoryProvider = Provider<ApiProductRepository>((ref) {
   return ApiProductRepository(ref.watch(apiClientProvider));
 });
 
-final heroSlideRepositoryProvider =
-    Provider<HeroSlideRepository>((ref) {
+final heroSlideRepositoryProvider = Provider<HeroSlideRepository>((ref) {
   return HeroSlideRepository(ref.watch(apiClientProvider));
 });
 
-final heroSlidesProvider =
-    FutureProvider<List<HeroSlide>>((ref) {
-  return ref
-      .watch(heroSlideRepositoryProvider)
-      .getPublicSlides();
+final heroSlidesProvider = FutureProvider<List<HeroSlide>>((ref) {
+  return ref.watch(heroSlideRepositoryProvider).getPublicSlides();
 });
 
-final adminHeroSlidesProvider =
-    FutureProvider<List<HeroSlide>>((ref) {
-  return ref
-      .watch(heroSlideRepositoryProvider)
-      .getAdminSlides();
+final adminHeroSlidesProvider = FutureProvider<List<HeroSlide>>((ref) {
+  return ref.watch(heroSlideRepositoryProvider).getAdminSlides();
 });
 
-final adminDashboardRepositoryProvider = Provider<AdminDashboardRepository>((ref) {
+final adminDashboardRepositoryProvider = Provider<AdminDashboardRepository>((
+  ref,
+) {
   return AdminDashboardRepository(ref.watch(apiClientProvider));
 });
 

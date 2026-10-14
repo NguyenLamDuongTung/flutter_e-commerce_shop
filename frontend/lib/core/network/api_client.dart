@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import '../config/app_config.dart';
 import '../storage/auth_storage.dart';
@@ -8,11 +9,35 @@ import 'api_exception.dart';
 
 class ApiClient {
   ApiClient({required this._authStorage, http.Client? httpClient})
-    :
-      _httpClient = httpClient ?? http.Client();
+    : _httpClient = httpClient ?? http.Client();
 
   final AuthStorage _authStorage;
   final http.Client _httpClient;
+
+  MediaType _imageContentType(String fileName) {
+    final separator = fileName.lastIndexOf('.');
+    final extension = separator == -1
+        ? ''
+        : fileName.substring(separator + 1).trim().toLowerCase();
+
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+        return MediaType('image', 'jpeg');
+
+      case 'png':
+        return MediaType('image', 'png');
+
+      case 'webp':
+        return MediaType('image', 'webp');
+
+      case 'avif':
+        return MediaType('image', 'avif');
+
+      default:
+        throw ApiException('Unsupported image format: $fileName');
+    }
+  }
 
   Future<Map<String, dynamic>> get(
     String path, {
@@ -106,15 +131,24 @@ class ApiClient {
     request.fields.addAll(fields);
 
     for (final file in files) {
+      if (file.bytes.isEmpty) {
+        throw ApiException('Image ${file.name} is empty or cannot be read.');
+      }
+
       request.files.add(
-        http.MultipartFile.fromBytes('images', file.bytes, filename: file.name),
+        http.MultipartFile.fromBytes(
+          'images',
+          file.bytes,
+          filename: file.name,
+          contentType: _imageContentType(file.name),
+        ),
       );
     }
 
     try {
-      final streamed = await _httpClient.send(request).timeout(
-        const Duration(seconds: 45),
-      );
+      final streamed = await _httpClient
+          .send(request)
+          .timeout(const Duration(seconds: 45));
       return _decodeResponse(await http.Response.fromStream(streamed));
     } on ApiException {
       rethrow;
@@ -213,10 +247,20 @@ class ApiClient {
     Map<String, dynamic> payload = {};
 
     if (response.body.isNotEmpty) {
-      final decoded = jsonDecode(response.body);
+      try {
+        final decoded = jsonDecode(response.body);
 
-      if (decoded is Map<String, dynamic>) {
-        payload = decoded;
+        if (decoded is Map<String, dynamic>) {
+          payload = decoded;
+        }
+      } on FormatException {
+        throw ApiException(
+          response.statusCode >= 500
+              ? 'The server returned an invalid response.'
+              : 'The request failed.',
+          statusCode: response.statusCode,
+          details: response.body,
+        );
       }
     }
 

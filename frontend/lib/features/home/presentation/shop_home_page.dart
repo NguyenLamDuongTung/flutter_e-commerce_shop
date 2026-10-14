@@ -7,6 +7,7 @@ import '../../../core/config/app_config.dart';
 import '../../products/presentation/widgets/product_card.dart';
 import '../../products/presentation/widgets/product_skeleton.dart';
 import 'widgets/hero_banner.dart';
+
 class ShopHomePage extends ConsumerStatefulWidget {
   const ShopHomePage({super.key});
 

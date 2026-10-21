@@ -6,33 +6,55 @@ class ProductSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? const Color(0xFF2A2F38) : Colors.grey.shade300;
+    final highlightColor =
+        isDark ? const Color(0xFF3A414C) : Colors.grey.shade100;
+
     return Shimmer.fromColors(
-      baseColor: const Color(0xFFE4E5E7),
-      highlightColor: const Color(0xFFF8F8F8),
+      baseColor: baseColor,
+      highlightColor: highlightColor,
       child: Container(
-        height: 410,
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: baseColor),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 230,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
+            Expanded(child: _bar(borderRadius: 16)),
+            const SizedBox(height: 14),
+            _bar(height: 18),
+            const SizedBox(height: 9),
+            FractionallySizedBox(
+              widthFactor: .68,
+              child: _bar(height: 18),
             ),
-            const SizedBox(height: 24),
-            Container(width: double.infinity, height: 18, color: Colors.white),
-            const SizedBox(height: 10),
-            Container(width: 150, height: 18, color: Colors.white),
-            const Spacer(),
-            Container(width: 120, height: 20, color: Colors.white),
+            const SizedBox(height: 14),
+            FractionallySizedBox(
+              widthFactor: .48,
+              child: _bar(height: 21),
+            ),
+            const SizedBox(height: 9),
+            FractionallySizedBox(
+              widthFactor: .6,
+              child: _bar(height: 14),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _bar({double? height, double borderRadius = 8}) {
+    return Container(
+      width: double.infinity,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(borderRadius),
       ),
     );
   }

@@ -37,6 +37,7 @@ class Product {
     required this.featured,
     required this.isActive,
     required this.images,
+    this.specifications = const {},
     this.shortDescription,
     this.description,
     this.comparePrice,
@@ -57,7 +58,24 @@ class Product {
   final bool featured;
   final bool isActive;
   final List<ProductImage> images;
+  final Map<String, dynamic> specifications;
   final String? primaryImage;
+
+  String? get primaryImageUrl {
+    if (primaryImage != null && primaryImage!.trim().isNotEmpty) {
+      return primaryImage;
+    }
+
+    for (final image in images) {
+      if (image.isPrimary && image.imageUrl.trim().isNotEmpty) {
+        return image.imageUrl;
+      }
+    }
+
+    return images.isEmpty ? null : images.first.imageUrl;
+  }
+
+  double get effectivePrice => price;
 
   bool get hasDiscount => comparePrice != null && comparePrice! > price;
 
@@ -91,6 +109,9 @@ class Product {
       images: rawImages
           .map((item) => ProductImage.fromJson(item as Map<String, dynamic>))
           .toList(),
+      specifications: Map<String, dynamic>.from(
+        json['specifications'] is Map ? json['specifications'] as Map : const {},
+      ),
       primaryImage: json['primaryImage']?.toString(),
     );
   }

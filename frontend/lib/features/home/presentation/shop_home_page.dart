@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/providers.dart';
-import '../../../core/config/app_config.dart';
 import '../../products/presentation/widgets/product_card.dart';
 import '../../products/presentation/widgets/product_skeleton.dart';
 import 'widgets/hero_banner.dart';

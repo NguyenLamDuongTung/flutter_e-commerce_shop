@@ -6,8 +6,11 @@ import '../core/network/api_client.dart';
 import '../core/storage/auth_storage.dart';
 import '../features/auth/data/api_auth_repository.dart';
 import '../features/auth/domain/app_user.dart';
+import '../features/cart/data/cart_repository.dart';
+import '../features/cart/domain/cart.dart';
 import '../features/admin/data/admin_dashboard_repository.dart';
 import '../features/admin/data/admin_product_repository.dart';
+import '../features/orders/data/order_repository.dart';
 import '../features/products/data/api_product_repository.dart';
 import '../features/products/domain/product.dart';
 import '../features/home/data/hero_slide_repository.dart';
@@ -27,6 +30,18 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 
 final productRepositoryProvider = Provider<ApiProductRepository>((ref) {
   return ApiProductRepository(ref.watch(apiClientProvider));
+});
+
+final cartRepositoryProvider = Provider<CartRepository>((ref) {
+  return CartRepository(ref.watch(apiClientProvider));
+});
+
+final cartProvider = FutureProvider<Cart>((ref) {
+  return ref.watch(cartRepositoryProvider).getCart();
+});
+
+final orderRepositoryProvider = Provider<OrderRepository>((ref) {
+  return OrderRepository(ref.watch(apiClientProvider));
 });
 
 final heroSlideRepositoryProvider = Provider<HeroSlideRepository>((ref) {
@@ -116,6 +131,7 @@ class AuthController extends AsyncNotifier<AppUser?> {
       }
 
       state = AsyncData(user);
+      ref.invalidate(cartProvider);
       return true;
     } catch (error, stackTrace) {
       state = AsyncError(error, stackTrace);
@@ -140,6 +156,7 @@ class AuthController extends AsyncNotifier<AppUser?> {
       );
 
       state = AsyncData(user);
+      ref.invalidate(cartProvider);
       return true;
     } catch (error, stackTrace) {
       state = AsyncError(error, stackTrace);
@@ -174,6 +191,7 @@ class AuthController extends AsyncNotifier<AppUser?> {
   Future<void> logout() async {
     await _repository.logout();
     state = const AsyncData(null);
+    ref.invalidate(cartProvider);
   }
 
   void clearError() {

@@ -5,147 +5,211 @@ import 'package:intl/intl.dart';
 import '../../../../core/config/app_config.dart';
 import '../../domain/product.dart';
 
-class ProductCard extends StatelessWidget {
-  const ProductCard({
-    super.key,
-    required this.product,
-    required this.onPressed,
-  });
+class ProductCard extends StatefulWidget {
+  const ProductCard({super.key, required this.product, required this.onPressed});
 
   final Product product;
   final VoidCallback onPressed;
 
-  static final NumberFormat _money = NumberFormat.currency(
+  @override
+  State<ProductCard> createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<ProductCard> {
+  static final _currency = NumberFormat.currency(
     locale: 'vi_VN',
     symbol: '₫',
     decimalDigits: 0,
   );
+  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = AppConfig.resolveImageUrl(product.primaryImage);
+    final product = widget.product;
+    final theme = Theme.of(context);
+    final isSoldOut = product.stockQuantity <= 0;
 
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onPressed,
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 26, 22, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    height: 230,
-                    width: double.infinity,
-                    child: imageUrl.isEmpty
-                        ? const Icon(
-                            Icons.devices_rounded,
-                            size: 90,
-                            color: Colors.black26,
-                          )
-                        : CachedNetworkImage(
-                            imageUrl: imageUrl,
-                            fit: BoxFit.contain,
-                            fadeInDuration: const Duration(milliseconds: 180),
-                            placeholder: (context, url) => const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                            errorWidget: (context, url, error) => const Icon(
-                              Icons.image_not_supported_outlined,
-                              size: 60,
-                            ),
-                          ),
+    return Semantics(
+      button: true,
+      label: 'Xem chi tiết ${product.name}',
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: AnimatedScale(
+          scale: _isHovered ? 1.015 : 1,
+          duration: const Duration(milliseconds: 180),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: _isHovered
+                    ? theme.colorScheme.primary.withValues(alpha: .35)
+                    : theme.colorScheme.outlineVariant.withValues(alpha: .55),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(
+                    alpha: _isHovered ? .13 : .07,
                   ),
-                  const SizedBox(height: 22),
-                  Text(
-                    product.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      height: 1.3,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const Spacer(),
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 10,
-                    runSpacing: 4,
+                  blurRadius: _isHovered ? 24 : 14,
+                  offset: Offset(0, _isHovered ? 10 : 6),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: widget.onPressed,
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        _money.format(product.price),
-                        style: const TextStyle(
-                          color: Color(0xFF0066CC),
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
+                      Expanded(
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: ColoredBox(
+                                color: theme.colorScheme.surfaceContainerHighest,
+                                child: CachedNetworkImage(
+                                  imageUrl: AppConfig.resolveImageUrl(
+                                    product.primaryImageUrl,
+                                  ),
+                                  fit: BoxFit.contain,
+                                  placeholder: (_, _) => const Center(
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                  errorWidget: (_, _, _) => Icon(
+                                    Icons.image_not_supported_outlined,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    size: 42,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (product.hasDiscount)
+                              Positioned(
+                                left: 10,
+                                top: 10,
+                                child: _Badge(
+                                  label: '-${product.discountPercent.round()}%',
+                                  color: theme.colorScheme.error,
+                                ),
+                              ),
+                            Positioned(
+                              right: 10,
+                              top: 10,
+                              child: _Badge(
+                                label: isSoldOut ? 'Hết hàng' : 'Mới',
+                                color: isSoldOut
+                                    ? theme.colorScheme.error
+                                    : const Color(0xFF167D4D),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      if (product.hasDiscount)
-                        Text(
-                          _money.format(product.comparePrice),
-                          style: const TextStyle(
-                            color: Colors.black45,
-                            fontSize: 14,
-                            decoration: TextDecoration.lineThrough,
-                          ),
+                      const SizedBox(height: 14),
+                      Text(
+                        product.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
                         ),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          Text(
+                            _currency.format(product.effectivePrice),
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          if (product.hasDiscount)
+                            Text(
+                              _currency.format(product.comparePrice),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            isSoldOut
+                                ? Icons.remove_shopping_cart_outlined
+                                : Icons.touch_app_outlined,
+                            size: 16,
+                            color: isSoldOut
+                                ? theme.colorScheme.error
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              isSoldOut
+                                  ? 'Tạm hết hàng'
+                                  : 'Nhấn để xem chi tiết',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: isSoldOut
+                                    ? theme.colorScheme.error
+                                    : theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            if (product.hasDiscount)
-              Positioned(
-                left: 0,
-                top: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 7,
-                  ),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFED1B24),
-                    borderRadius: BorderRadius.horizontal(
-                      right: Radius.circular(18),
-                    ),
-                  ),
-                  child: Text(
-                    'Giảm ${product.discountPercent}%',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            Positioned(
-              right: 10,
-              top: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: const Color(0xFF45A928)),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  '● Mới',
-                  style: TextStyle(
-                    color: Color(0xFF45A928),
-                    fontWeight: FontWeight.w700,
-                  ),
                 ),
               ),
             ),
-          ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  const _Badge({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
         ),
       ),
     );

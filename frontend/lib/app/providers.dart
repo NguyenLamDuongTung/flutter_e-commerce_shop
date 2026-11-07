@@ -36,7 +36,13 @@ final cartRepositoryProvider = Provider<CartRepository>((ref) {
   return CartRepository(ref.watch(apiClientProvider));
 });
 
-final cartProvider = FutureProvider<Cart>((ref) {
+final cartProvider = FutureProvider<Cart>((ref) async {
+  final user = await ref.watch(authControllerProvider.future);
+
+  if (user == null) {
+    return const Cart(id: 0, items: [], itemCount: 0, subtotal: 0);
+  }
+
   return ref.watch(cartRepositoryProvider).getCart();
 });
 

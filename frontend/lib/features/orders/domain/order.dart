@@ -78,7 +78,10 @@ class ShopOrder {
       status: json['status']?.toString() ?? 'pending',
       note: json['note']?.toString(),
       items: rawItems
-          .map((item) => OrderItem.fromJson(Map<String, dynamic>.from(item as Map)))
+          .map(
+            (item) =>
+                OrderItem.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
           .toList(),
     );
   }

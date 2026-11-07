@@ -322,8 +322,9 @@ class _Chart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (sales.isEmpty)
+    if (sales.isEmpty) {
       return const Center(child: Text('Chưa có dữ liệu doanh thu.'));
+    }
     final maximum = sales.fold<double>(
       0,
       (value, item) => math.max(value, item.revenue),
@@ -351,8 +352,9 @@ class _Chart extends StatelessWidget {
                 showTitles: true,
                 getTitlesWidget: (value, meta) {
                   final index = value.toInt();
-                  if (index < 0 || index >= sales.length)
+                  if (index < 0 || index >= sales.length) {
                     return const SizedBox.shrink();
+                  }
                   final parts = sales[index].month.split('-');
                   return Padding(
                     padding: const EdgeInsets.only(top: 7),

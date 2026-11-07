@@ -6,7 +6,11 @@ import '../../../../core/config/app_config.dart';
 import '../../domain/product.dart';
 
 class ProductCard extends StatefulWidget {
-  const ProductCard({super.key, required this.product, required this.onPressed});
+  const ProductCard({
+    super.key,
+    required this.product,
+    required this.onPressed,
+  });
 
   final Product product;
   final VoidCallback onPressed;
@@ -51,9 +55,7 @@ class _ProductCardState extends State<ProductCard> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(
-                    alpha: _isHovered ? .13 : .07,
-                  ),
+                  color: Colors.black.withValues(alpha: _isHovered ? .13 : .07),
                   blurRadius: _isHovered ? 24 : 14,
                   offset: Offset(0, _isHovered ? 10 : 6),
                 ),
@@ -76,14 +78,17 @@ class _ProductCardState extends State<ProductCard> {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(16),
                               child: ColoredBox(
-                                color: theme.colorScheme.surfaceContainerHighest,
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
                                 child: CachedNetworkImage(
                                   imageUrl: AppConfig.resolveImageUrl(
                                     product.primaryImageUrl,
                                   ),
                                   fit: BoxFit.contain,
                                   placeholder: (_, _) => const Center(
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   ),
                                   errorWidget: (_, _, _) => Icon(
                                     Icons.image_not_supported_outlined,
@@ -206,10 +211,8 @@ class _Badge extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Text(
           label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-              ),
+          style: Theme.of(context).textTheme.labelSmall
+              ?.copyWith(color: Colors.white, fontWeight: FontWeight.w800),
         ),
       ),
     );

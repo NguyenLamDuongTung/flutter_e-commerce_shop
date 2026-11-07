@@ -110,7 +110,9 @@ class Product {
           .map((item) => ProductImage.fromJson(item as Map<String, dynamic>))
           .toList(),
       specifications: Map<String, dynamic>.from(
-        json['specifications'] is Map ? json['specifications'] as Map : const {},
+        json['specifications'] is Map
+            ? json['specifications'] as Map
+            : const {},
       ),
       primaryImage: json['primaryImage']?.toString(),
     );

@@ -201,7 +201,18 @@ class _HeroSlideView extends StatelessWidget {
           const SizedBox(height: 26),
           OutlinedButton(
             onPressed: () {
-              context.go('/products/${slide.productSlug}');
+              final slug = slide.productSlug.trim();
+
+              if (slug.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Banner chưa được liên kết với sản phẩm.'),
+                  ),
+                );
+                return;
+              }
+
+              context.go('/products/${Uri.encodeComponent(slug)}');
             },
             child: Text(slide.buttonText),
           ),

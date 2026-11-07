@@ -24,11 +24,14 @@ class CartPage extends ConsumerWidget {
     int quantity,
   ) async {
     try {
-      await ref.read(cartRepositoryProvider).updateItem(item.productId, quantity);
+      await ref
+          .read(cartRepositoryProvider)
+          .updateItem(item.productId, quantity);
       ref.invalidate(cartProvider);
     } catch (error) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$error')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
     }
   }
 
@@ -42,7 +45,8 @@ class CartPage extends ConsumerWidget {
       ref.invalidate(cartProvider);
     } catch (error) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$error')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
     }
   }
 
@@ -65,7 +69,10 @@ class CartPage extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Không thể tải giỏ hàng.\n$error', textAlign: TextAlign.center),
+              Text(
+                'Không thể tải giỏ hàng.\n$error',
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () => ref.invalidate(cartProvider),
@@ -80,7 +87,11 @@ class CartPage extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.shopping_cart_outlined, size: 84, color: Colors.black26),
+                  const Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 84,
+                    color: Colors.black26,
+                  ),
                   const SizedBox(height: 18),
                   const Text(
                     'Giỏ hàng của bạn đang trống',
@@ -102,7 +113,8 @@ class CartPage extends ConsumerWidget {
               final products = _CartItems(
                 cart: value,
                 money: _money,
-                onUpdate: (item, quantity) => _update(context, ref, item, quantity),
+                onUpdate: (item, quantity) =>
+                    _update(context, ref, item, quantity),
                 onRemove: (item) => _remove(context, ref, item),
               );
               final summary = _CartSummary(cart: value, money: _money);
@@ -114,7 +126,11 @@ class CartPage extends ConsumerWidget {
                     constraints: const BoxConstraints(maxWidth: 1200),
                     child: compact
                         ? Column(
-                            children: [products, const SizedBox(height: 20), summary],
+                            children: [
+                              products,
+                              const SizedBox(height: 20),
+                              summary,
+                            ],
                           )
                         : Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,7 +228,10 @@ class _CartItemRow extends StatelessWidget {
             children: [
               Text(
                 item.name,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 7),
               Text(
@@ -256,7 +275,10 @@ class _CartItemRow extends StatelessWidget {
                   TextButton.icon(
                     onPressed: onRemove,
                     icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    label: const Text('Xóa', style: TextStyle(color: Colors.red)),
+                    label: const Text(
+                      'Xóa',
+                      style: TextStyle(color: Colors.red),
+                    ),
                   ),
                 ],
               ),
@@ -296,9 +318,15 @@ class _CartSummary extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Tóm tắt đơn hàng', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+          const Text(
+            'Tóm tắt đơn hàng',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: 22),
-          _SummaryLine(label: 'Tạm tính (${cart.itemCount} sản phẩm)', value: money.format(cart.subtotal)),
+          _SummaryLine(
+            label: 'Tạm tính (${cart.itemCount} sản phẩm)',
+            value: money.format(cart.subtotal),
+          ),
           const SizedBox(height: 12),
           _SummaryLine(
             label: 'Phí giao hàng',
@@ -331,7 +359,11 @@ class _CartSummary extends StatelessWidget {
 }
 
 class _SummaryLine extends StatelessWidget {
-  const _SummaryLine({required this.label, required this.value, this.emphasized = false});
+  const _SummaryLine({
+    required this.label,
+    required this.value,
+    this.emphasized = false,
+  });
 
   final String label;
   final String value;

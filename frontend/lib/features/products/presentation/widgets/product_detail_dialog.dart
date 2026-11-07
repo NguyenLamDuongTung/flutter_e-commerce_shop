@@ -8,10 +8,7 @@ import '../../../../app/providers.dart';
 import '../../../../core/config/app_config.dart';
 import '../../domain/product.dart';
 
-Future<void> showProductDetails(
-  BuildContext context,
-  Product product,
-) {
+Future<void> showProductDetails(BuildContext context, Product product) {
   return showDialog<void>(
     context: context,
     barrierColor: Colors.black54,
@@ -25,7 +22,8 @@ class ProductDetailDialog extends ConsumerStatefulWidget {
   final Product product;
 
   @override
-  ConsumerState<ProductDetailDialog> createState() => _ProductDetailDialogState();
+  ConsumerState<ProductDetailDialog> createState() =>
+      _ProductDetailDialogState();
 }
 
 class _ProductDetailDialogState extends ConsumerState<ProductDetailDialog> {
@@ -43,7 +41,9 @@ class _ProductDetailDialogState extends ConsumerState<ProductDetailDialog> {
   @override
   void initState() {
     super.initState();
-    _details = ref.read(productRepositoryProvider).getProduct(widget.product.slug);
+    _details = ref
+        .read(productRepositoryProvider)
+        .getProduct(widget.product.slug);
   }
 
   Future<void> _addToCart(Product product) async {
@@ -58,10 +58,9 @@ class _ProductDetailDialogState extends ConsumerState<ProductDetailDialog> {
 
     setState(() => _adding = true);
     try {
-      await ref.read(cartRepositoryProvider).addItem(
-        product.id,
-        quantity: _quantity,
-      );
+      await ref
+          .read(cartRepositoryProvider)
+          .addItem(product.id, quantity: _quantity);
       ref.invalidate(cartProvider);
 
       if (!mounted) return;
@@ -79,9 +78,8 @@ class _ProductDetailDialogState extends ConsumerState<ProductDetailDialog> {
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$error')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
     } finally {
       if (mounted) setState(() => _adding = false);
     }
@@ -115,7 +113,9 @@ class _ProductDetailDialogState extends ConsumerState<ProductDetailDialog> {
                     children: [
                       const Icon(Icons.error_outline, size: 48),
                       const SizedBox(height: 12),
-                      Text('Không thể tải thông tin sản phẩm.\n${snapshot.error}'),
+                      Text(
+                        'Không thể tải thông tin sản phẩm.\n${snapshot.error}',
+                      ),
                       const SizedBox(height: 18),
                       FilledButton(
                         onPressed: () => setState(() {
@@ -152,7 +152,8 @@ class _ProductDetailDialogState extends ConsumerState<ProductDetailDialog> {
                       final gallery = _ProductGallery(
                         images: images,
                         selectedIndex: safeImageIndex,
-                        onSelected: (index) => setState(() => _selectedImage = index),
+                        onSelected: (index) =>
+                            setState(() => _selectedImage = index),
                       );
                       final information = _ProductInformation(
                         product: product,
@@ -172,7 +173,11 @@ class _ProductDetailDialogState extends ConsumerState<ProductDetailDialog> {
 
                       if (compact) {
                         return Column(
-                          children: [gallery, const SizedBox(height: 28), information],
+                          children: [
+                            gallery,
+                            const SizedBox(height: 28),
+                            information,
+                          ],
                         );
                       }
 
@@ -233,12 +238,18 @@ class _ProductGallery extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
           ),
           child: imageUrl.isEmpty
-              ? const Icon(Icons.devices_rounded, size: 120, color: Colors.black26)
+              ? const Icon(
+                  Icons.devices_rounded,
+                  size: 120,
+                  color: Colors.black26,
+                )
               : CachedNetworkImage(
                   imageUrl: imageUrl,
                   fit: BoxFit.contain,
-                  placeholder: (_, _) => const Center(child: CircularProgressIndicator()),
-                  errorWidget: (_, _, _) => const Icon(Icons.broken_image_outlined, size: 70),
+                  placeholder: (_, _) =>
+                      const Center(child: CircularProgressIndicator()),
+                  errorWidget: (_, _, _) =>
+                      const Icon(Icons.broken_image_outlined, size: 70),
                 ),
         ),
         if (images.length > 1) ...[
@@ -302,7 +313,10 @@ class _ProductInformation extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(product.categoryName, style: const TextStyle(color: Color(0xFF0066CC))),
+        Text(
+          product.categoryName,
+          style: const TextStyle(color: Color(0xFF0066CC)),
+        ),
         const SizedBox(height: 8),
         Text(
           product.name,
@@ -312,7 +326,11 @@ class _ProductInformation extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             product.shortDescription!,
-            style: const TextStyle(fontSize: 17, color: Colors.black54, height: 1.5),
+            style: const TextStyle(
+              fontSize: 17,
+              color: Colors.black54,
+              height: 1.5,
+            ),
           ),
         ],
         const SizedBox(height: 20),
@@ -357,13 +375,19 @@ class _ProductInformation extends StatelessWidget {
         ),
         if ((product.description ?? '').isNotEmpty) ...[
           const SizedBox(height: 22),
-          const Text('Thông tin sản phẩm', style: TextStyle(fontWeight: FontWeight.w800)),
+          const Text(
+            'Thông tin sản phẩm',
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: 8),
           Text(product.description!, style: const TextStyle(height: 1.55)),
         ],
         if (product.specifications.isNotEmpty) ...[
           const SizedBox(height: 20),
-          const Text('Thông số kỹ thuật', style: TextStyle(fontWeight: FontWeight.w800)),
+          const Text(
+            'Thông số kỹ thuật',
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: 8),
           for (final entry in product.specifications.entries)
             Padding(
@@ -373,7 +397,10 @@ class _ProductInformation extends StatelessWidget {
                 children: [
                   SizedBox(
                     width: 145,
-                    child: Text(entry.key, style: const TextStyle(color: Colors.black54)),
+                    child: Text(
+                      entry.key,
+                      style: const TextStyle(color: Colors.black54),
+                    ),
                   ),
                   Expanded(child: Text('${entry.value}')),
                 ],
@@ -390,12 +417,18 @@ class _ProductInformation extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  IconButton(onPressed: onDecrease, icon: const Icon(Icons.remove)),
+                  IconButton(
+                    onPressed: onDecrease,
+                    icon: const Icon(Icons.remove),
+                  ),
                   SizedBox(
                     width: 34,
                     child: Text('$quantity', textAlign: TextAlign.center),
                   ),
-                  IconButton(onPressed: onIncrease, icon: const Icon(Icons.add)),
+                  IconButton(
+                    onPressed: onIncrease,
+                    icon: const Icon(Icons.add),
+                  ),
                 ],
               ),
             ),
@@ -407,7 +440,10 @@ class _ProductInformation extends StatelessWidget {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Icon(Icons.add_shopping_cart),
                 label: Text(adding ? 'Đang thêm...' : 'Thêm vào giỏ hàng'),

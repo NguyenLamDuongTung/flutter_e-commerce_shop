@@ -1,74 +1,86 @@
-function parseImages(value) {
-  if (!value) {
-    return [];
-  }
-
-  if (Array.isArray(value)) {
-    return value;
-  }
-
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value);
-    } catch {
-      return [];
-    }
-  }
-
-  return [];
-}
-
-function parseSpecifications(value) {
-  if (!value) {
-    return {};
-  }
-
-  if (typeof value === 'object') {
-    return value;
+function parseJson(value, fallback) {
+  if (typeof value !== 'string') {
+    return value ?? fallback;
   }
 
   try {
     return JSON.parse(value);
   } catch {
-    return {};
+    return fallback;
   }
 }
 
+function parseImages(value) {
+  const parsed = parseJson(value, []);
+
+  if (!Array.isArray(parsed)) {
+    return [];
+  }
+
+  return parsed
+    .filter((image) => image?.id && image?.imageUrl)
+    .map((image) => ({
+      id: Number(image.id),
+      imageUrl: String(image.imageUrl),
+      altText: image.altText ?? null,
+      displayOrder: Number(image.displayOrder ?? 0),
+      isPrimary:
+        image.isPrimary === true ||
+        image.isPrimary === 1 ||
+        image.isPrimary === '1',
+    }))
+    .sort(
+      (a, b) =>
+        Number(b.isPrimary) - Number(a.isPrimary) ||
+        a.displayOrder - b.displayOrder ||
+        a.id - b.id,
+    );
+}
+
+function parseSpecifications(value) {
+  const parsed = parseJson(value, {});
+
+  if (
+    !parsed ||
+    typeof parsed !== 'object' ||
+    Array.isArray(parsed)
+  ) {
+    return {};
+  }
+
+  return parsed;
+}
+
 export function mapProduct(row) {
-  const images = parseImages(row.images).filter(
-    (image) => image?.id && image?.imageUrl,
-  );
+  const images = parseImages(row.images);
 
   return {
-    id: row.id,
-    categoryId: row.category_id,
-    categoryName: row.category_name,
-    categorySlug: row.category_slug,
+    id: Number(row.id),
+    categoryId: Number(row.category_id),
+    categoryName: row.category_name ?? '',
+    categorySlug: row.category_slug ?? '',
 
     name: row.name,
     slug: row.slug,
-    shortDescription: row.short_description,
-    description: row.description,
+    shortDescription: row.short_description ?? null,
+    description: row.description ?? null,
 
     price: Number(row.price),
+
     comparePrice:
-      row.compare_price === null
+      row.compare_price == null
         ? null
         : Number(row.compare_price),
 
     stockQuantity: Number(row.stock_quantity),
-    featured: Boolean(row.featured),
-    isActive: Boolean(row.is_active),
 
-    specifications: parseSpecifications(
-      row.specifications,
-    ),
+    featured: Number(row.featured) === 1,
+    isActive: Number(row.is_active) === 1,
+
+    specifications: parseSpecifications(row.specifications),
 
     images,
-    primaryImage:
-      images.find((image) => image.isPrimary)?.imageUrl ??
-      images[0]?.imageUrl ??
-      null,
+    primaryImage: images[0]?.imageUrl ?? null,
 
     createdAt: row.created_at,
     updatedAt: row.updated_at,

@@ -30,24 +30,15 @@ const productSelect = `
       (
         SELECT JSON_ARRAYAGG(
           JSON_OBJECT(
-            'id', image_data.id,
-            'imageUrl', image_data.image_url,
-            'altText', image_data.alt_text,
-            'displayOrder', image_data.display_order,
-            'isPrimary', image_data.is_primary
+            'id', pi.id,
+            'imageUrl', pi.image_url,
+            'altText', pi.alt_text,
+            'displayOrder', pi.display_order,
+            'isPrimary', pi.is_primary
           )
         )
-        FROM (
-          SELECT
-            pi.id,
-            pi.image_url,
-            pi.alt_text,
-            pi.display_order,
-            pi.is_primary
-          FROM product_images pi
-          WHERE pi.product_id = p.id
-          ORDER BY pi.is_primary DESC, pi.display_order ASC
-        ) AS image_data
+        FROM product_images pi
+        WHERE pi.product_id = p.id
       ),
       JSON_ARRAY()
     ) AS images

@@ -47,8 +47,8 @@ function mapOrder(row) {
   };
 }
 
-async function loadOrder(orderId, userId) {
-  const [orderRows] = await database.execute(
+async function loadOrder(orderId, userId, executor = database) {
+  const [orderRows] = await executor.execute(
     `
       SELECT *
       FROM orders
@@ -62,7 +62,7 @@ async function loadOrder(orderId, userId) {
     throw new HttpError(404, 'Order was not found.');
   }
 
-  const [itemRows] = await database.execute(
+  const [itemRows] = await executor.execute(
     `
       SELECT
         id,
@@ -95,6 +95,7 @@ async function loadOrder(orderId, userId) {
 
 router.post('/checkout', async (request, response, next) => {
   let connection;
+  let transactionStarted = false;
 
   try {
     const input = z
@@ -117,6 +118,7 @@ router.post('/checkout', async (request, response, next) => {
 
     connection = await database.getConnection();
     await connection.beginTransaction();
+    transactionStarted = true;
 
     const [cartRows] = await connection.execute(
       `
@@ -124,6 +126,7 @@ router.post('/checkout', async (request, response, next) => {
         FROM carts
         WHERE user_id = ?
         LIMIT 1
+        FOR UPDATE
       `,
       [request.user.id],
     );
@@ -167,28 +170,35 @@ router.post('/checkout', async (request, response, next) => {
     }
 
     for (const item of cartItems) {
-      if (!item.is_active) {
+      const quantity = Number(item.quantity);
+      const stock = Number(item.stock_quantity);
+
+      if (!Number.isSafeInteger(quantity) || quantity < 1) {
         throw new HttpError(
           400,
-          `${item.name} is no longer available.`,
+          `Số lượng của ${item.name} không hợp lệ.`,
         );
       }
 
-      if (Number(item.quantity) > Number(item.stock_quantity)) {
+      if (Number(item.is_active) !== 1) {
         throw new HttpError(
-          400,
-          `${item.name} only has ${item.stock_quantity} item(s) available.`,
+          409,
+          `${item.name} hiện không còn được bán.`,
+        );
+      }
+
+      if (quantity > stock) {
+        throw new HttpError(
+          409,
+          `${item.name} chỉ còn ${stock} sản phẩm.`,
         );
       }
     }
 
     const subtotal = cartItems.reduce(
-      (total, item) =>
-        total +
-        Number(item.price) * Number(item.quantity),
+      (total, item) => total + Number(item.price) * Number(item.quantity),
       0,
     );
-
     const shippingFee = subtotal >= 10000000 ? 0 : 30000;
     const totalAmount = subtotal + shippingFee;
     const orderNumber = createOrderNumber();
@@ -232,6 +242,7 @@ router.post('/checkout', async (request, response, next) => {
     for (const item of cartItems) {
       const price = Number(item.price);
       const quantity = Number(item.quantity);
+
       const lineTotal = price * quantity;
 
       await connection.execute(
@@ -286,19 +297,27 @@ router.post('/checkout', async (request, response, next) => {
       [cartId],
     );
 
-    await connection.commit();
+    const invoice = await loadOrder(
+      orderResult.insertId,
+      request.user.id,
+      connection,
+    );
 
-    response.status(201).json({
+    await connection.commit();
+    transactionStarted = false;
+
+    return response.status(201).json({
       success: true,
-      message: 'Order placed successfully.',
-      data: await loadOrder(
-        orderResult.insertId,
-        request.user.id,
-      ),
+      message: 'Đã tạo đơn hàng thành công.',
+      data: invoice,
     });
   } catch (error) {
-    if (connection) {
-      await connection.rollback();
+    if (connection && transactionStarted) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error('Checkout rollback failed:', rollbackError);
+      }
     }
 
     next(error);
@@ -378,6 +397,7 @@ router.get('/:id', async (request, response, next) => {
 
 router.patch('/:id/cancel', async (request, response, next) => {
   let connection;
+  let transactionStarted = false;
 
   try {
     const orderId = z.coerce
@@ -388,6 +408,7 @@ router.patch('/:id/cancel', async (request, response, next) => {
 
     connection = await database.getConnection();
     await connection.beginTransaction();
+    transactionStarted = true;
 
     const [orderRows] = await connection.execute(
       `
@@ -451,8 +472,12 @@ router.patch('/:id/cancel', async (request, response, next) => {
       data: await loadOrder(orderId, request.user.id),
     });
   } catch (error) {
-    if (connection) {
-      await connection.rollback();
+    if (connection && transactionStarted) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error('Failed to rollback transaction:', rollbackError);
+      }
     }
 
     next(error);

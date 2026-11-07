@@ -54,14 +54,17 @@ class Cart {
   final double subtotal;
 
   bool get isEmpty => items.isEmpty;
-  bool get canCheckout => items.isNotEmpty && items.every((item) => item.isAvailable);
+  bool get canCheckout =>
+      items.isNotEmpty && items.every((item) => item.isAvailable);
 
   factory Cart.fromJson(Map<String, dynamic> json) {
     final rawItems = json['items'] as List<dynamic>? ?? const [];
     return Cart(
       id: (json['id'] as num).toInt(),
       items: rawItems
-          .map((item) => CartItem.fromJson(Map<String, dynamic>.from(item as Map)))
+          .map(
+            (item) => CartItem.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
           .toList(),
       itemCount: (json['itemCount'] as num?)?.toInt() ?? 0,
       subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0,

@@ -12,13 +12,19 @@ export function errorHandler(error, request, response, next) {
   console.error(error);
 
   if (error instanceof ZodError) {
+    const errors = error.issues.map((issue) => ({
+      field: issue.path.join('.'),
+      message: issue.message,
+    }));
+
+    const firstError = errors[0];
+
     return response.status(400).json({
       success: false,
-      message: 'The submitted information is invalid.',
-      errors: error.issues.map((issue) => ({
-        field: issue.path.join('.'),
-        message: issue.message,
-      })),
+      message: firstError
+        ? `${firstError.field}: ${firstError.message}`
+        : 'Thông tin gửi lên không hợp lệ.',
+      errors,
     });
   }
 

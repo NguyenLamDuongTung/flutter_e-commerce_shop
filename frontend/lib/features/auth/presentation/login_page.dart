@@ -54,7 +54,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
 
     if (success) {
-      context.go(widget.adminMode ? '/admin' : '/');
+      // app_router.dart handles navigation after authentication,
+      // including returning to /cart or /products/:slug.
       return;
     }
 

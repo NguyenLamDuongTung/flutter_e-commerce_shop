@@ -4,85 +4,135 @@ import 'package:go_router/go_router.dart';
 
 import '../features/admin/presentation/admin_dashboard_page.dart';
 import '../features/admin/presentation/admin_login_page.dart';
-import '../features/admin/presentation/admin_section_page.dart';
 import '../features/admin/presentation/admin_products_page.dart';
+import '../features/admin/presentation/admin_section_page.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/auth/presentation/register_page.dart';
+import '../features/cart/presentation/cart_page.dart';
 import '../features/home/presentation/shop_home_page.dart';
+import '../features/orders/domain/order.dart';
+import '../features/orders/presentation/checkout_page.dart';
+import '../features/orders/presentation/order_success_page.dart';
+import '../features/products/presentation/product_detail_page.dart';
 import 'providers.dart';
 
-final routerProvider = Provider<GoRouter>((ref) {
-  late final GoRouter router;
+String? _safeReturnPath(String? value) {
+  if (value == null || value.isEmpty) return null;
 
-  router = GoRouter(
+  final uri = Uri.tryParse(value);
+
+  if (uri == null ||
+      uri.hasScheme ||
+      uri.hasAuthority ||
+      !uri.path.startsWith('/')) {
+    return null;
+  }
+
+  final allowed =
+      uri.path == '/' ||
+      uri.path == '/cart' ||
+      uri.path == '/checkout' ||
+      uri.path.startsWith('/products/') ||
+      uri.path.startsWith('/categories/');
+
+  return allowed ? uri.toString() : null;
+}
+
+final routerProvider = Provider<GoRouter>((ref) {
+  final router = GoRouter(
     initialLocation: '/',
-    debugLogDiagnostics: true,
     redirect: (context, state) {
-      // Dùng ref.read để router không bị tạo lại mỗi lần auth thay đổi.
-      final authState = ref.read(authControllerProvider);
+      final auth = ref.read(authControllerProvider);
+
+      if (auth.isLoading) return null;
+
+      final user = auth.value;
       final path = state.uri.path;
 
-      // Keep the current page while login/session restoration is running.
-      // Redirecting to /loading here unmounts the login form before the
-      // authentication request completes and can send the user back home.
-      if (authState.isLoading) return null;
+      final adminLogin = path == '/admin/login';
+      final adminPath = path == '/admin' || path.startsWith('/admin/');
 
-      final user = authState.value;
-
-      final isAdminPath = path.startsWith('/admin');
-      final isAdminLogin = path == '/admin/login';
-
-      final isCustomerProtected =
-          path.startsWith('/cart') ||
-          path.startsWith('/checkout') ||
-          path.startsWith('/account');
-
-      if (path == '/loading') return user?.isAdmin == true ? '/admin' : '/';
-
-      // Bảo vệ tất cả trang admin, ngoại trừ trang đăng nhập.
-      if (isAdminPath && !isAdminLogin) {
+      if (adminPath && !adminLogin) {
         if (user == null || !user.isAdmin) {
           return '/admin/login';
         }
       }
 
-      // Admin đã đăng nhập thì không cho quay lại trang login admin.
-      if (isAdminLogin && user?.isAdmin == true) {
+      if (adminLogin && user?.isAdmin == true) {
         return '/admin';
       }
 
-      // Khách hàng phải đăng nhập trước khi dùng cart/checkout/account.
-      if (isCustomerProtected && user == null) {
-        return '/login';
+      final protectedCustomerPage =
+          path == '/cart' || path == '/checkout' || path == '/order-success';
+
+      if (protectedCustomerPage && user == null) {
+        return Uri(
+          path: '/login',
+          queryParameters: {'from': state.uri.toString()},
+        ).toString();
       }
 
-      // Người dùng đã đăng nhập thì không hiển thị login/register.
       if ((path == '/login' || path == '/register') && user != null) {
-        return user.isAdmin ? '/admin' : '/';
+        final from = _safeReturnPath(state.uri.queryParameters['from']);
+
+        return from ?? (user.isAdmin ? '/admin' : '/');
       }
 
       return null;
     },
-    errorBuilder: (context, state) {
-      return Scaffold(
-        body: Center(child: Text('Page not found: ${state.uri.path}')),
-      );
-    },
+    errorBuilder: (context, state) => Scaffold(
+      appBar: AppBar(title: const Text('Không tìm thấy trang')),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Đường dẫn không tồn tại: ${state.uri.path}'),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () => context.go('/'),
+              child: const Text('Về trang chủ'),
+            ),
+          ],
+        ),
+      ),
+    ),
     routes: [
+      GoRoute(path: '/', builder: (context, state) => const ShopHomePage()),
       GoRoute(
-        path: '/loading',
+        path: '/categories/:slug',
         builder: (context, state) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+          final slug = state.pathParameters['slug']!;
+
+          return ShopHomePage(
+            key: ValueKey('category-$slug'),
+            categorySlug: slug,
           );
         },
       ),
-      GoRoute(path: '/', builder: (context, state) => const ShopHomePage()),
+      GoRoute(
+        path: '/products/:slug',
+        builder: (context, state) => ProductDetailPage(
+          key: ValueKey(state.pathParameters['slug']),
+          slug: state.pathParameters['slug']!,
+        ),
+      ),
+      GoRoute(path: '/cart', builder: (context, state) => const CartPage()),
+      GoRoute(
+        path: '/checkout',
+        builder: (context, state) => const CheckoutPage(),
+      ),
+      GoRoute(
+        path: '/order-success',
+        builder: (context, state) => OrderSuccessPage(
+          order: state.extra is ShopOrder ? state.extra as ShopOrder : null,
+        ),
+      ),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterPage(),
       ),
+      GoRoute(path: '/loading', redirect: (context, state) => '/'),
       GoRoute(
         path: '/admin/login',
         builder: (context, state) => const AdminLoginPage(),
@@ -99,7 +149,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/orders',
         builder: (context, state) => const AdminSectionPage(
           title: 'Quản lý đơn hàng',
-          description: 'Theo dõi và cập nhật trạng thái đơn hàng khách hàng.',
+          description: 'Theo dõi và cập nhật đơn hàng khách hàng.',
           icon: Icons.receipt_long_outlined,
         ),
       ),
@@ -107,8 +157,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/customers',
         builder: (context, state) => const AdminSectionPage(
           title: 'Quản lý khách hàng',
-          description:
-              'Xem tài khoản, lịch sử mua hàng và hoạt động thành viên.',
+          description: 'Thông tin khách hàng thành viên.',
           icon: Icons.people_alt_outlined,
         ),
       ),
@@ -116,16 +165,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/analytics',
         builder: (context, state) => const AdminSectionPage(
           title: 'Doanh thu và phân tích',
-          description:
-              'Theo dõi doanh thu, sản phẩm bán chạy và xu hướng bán hàng.',
+          description: 'Theo dõi kết quả kinh doanh.',
           icon: Icons.query_stats_rounded,
         ),
       ),
     ],
   );
 
-  // Khi đăng nhập hoặc đăng xuất, chỉ refresh redirect.
-  // GoRouter không bị khởi tạo lại và không mất URL hiện tại.
   ref.listen(authControllerProvider, (previous, next) {
     router.refresh();
   });

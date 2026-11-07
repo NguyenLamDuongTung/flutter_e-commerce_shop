@@ -27,6 +27,8 @@ class OrderRepository {
       },
     );
 
-    return ShopOrder.fromJson(Map<String, dynamic>.from(response['data'] as Map));
+    return ShopOrder.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
   }
 }

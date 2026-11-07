@@ -10,6 +10,10 @@ import '../../../core/config/app_config.dart';
 import '../data/admin_product_repository.dart';
 import '../domain/admin_product.dart';
 
+import 'dart:convert';
+
+import '../../products/presentation/product_detail_page.dart';
+
 class AdminProductsPage extends ConsumerStatefulWidget {
   const AdminProductsPage({super.key});
 
@@ -417,6 +421,7 @@ class _ProductDialogState extends ConsumerState<_ProductDialog> {
   late final TextEditingController _name;
   late final TextEditingController _slug;
   late final TextEditingController _shortDescription;
+  late final TextEditingController _specifications;
   late final TextEditingController _description;
   late final TextEditingController _price;
   late final TextEditingController _comparePrice;
@@ -438,6 +443,7 @@ class _ProductDialogState extends ConsumerState<_ProductDialog> {
     );
 
     _name.addListener(() {
+      if (widget.product != null) return;
       final generatedSlug = _createSlug(_name.text);
 
       if (_slug.text != generatedSlug) {
@@ -448,6 +454,10 @@ class _ProductDialogState extends ConsumerState<_ProductDialog> {
       text: product?.shortDescription ?? '',
     );
     _description = TextEditingController(text: product?.description ?? '');
+    _specifications = TextEditingController(
+      text: const JsonEncoder.withIndent('  ')
+          .convert(product?.specifications ?? <String, dynamic>{}),
+    );
     _price = TextEditingController(
       text: product == null ? '' : '${product.price}',
     );
@@ -466,6 +476,7 @@ class _ProductDialogState extends ConsumerState<_ProductDialog> {
     _slug.dispose();
     _shortDescription.dispose();
     _description.dispose();
+    _specifications.dispose();
     _price.dispose();
     _comparePrice.dispose();
     _stock.dispose();
@@ -541,17 +552,36 @@ class _ProductDialogState extends ConsumerState<_ProductDialog> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     if (!_formKey.currentState!.validate()) return;
 
     final price = double.tryParse(_price.text.trim());
+
     final comparePrice = _comparePrice.text.trim().isEmpty
         ? null
         : double.tryParse(_comparePrice.text.trim());
+
     final stock = int.tryParse(_stock.text.trim());
 
-    if (_categoryId == null || price == null || stock == null) return;
+    if (_categoryId == null || price == null || stock == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng kiểm tra danh mục, giá và tồn kho.'),
+        ),
+      );
+      return;
+    }
+
+    final specifications = Map<String, dynamic>.from(
+      jsonDecode(
+        _specifications.text.trim().isEmpty
+            ? '{}'
+            : _specifications.text.trim(),
+      ) as Map,
+    );
 
     setState(() => _saving = true);
+
     try {
       await ref
           .read(adminProductRepositoryProvider)
@@ -568,19 +598,33 @@ class _ProductDialogState extends ConsumerState<_ProductDialog> {
               stockQuantity: stock,
               featured: _featured,
               isActive: _active,
+              specifications: specifications,
             ),
             images: _images
                 .map((file) => (name: file.name, bytes: file.bytes))
                 .toList(),
           );
-      if (mounted) Navigator.pop(context, true);
+
+      // Refresh public product data in the current app session.
+      ref.invalidate(productsProvider);
+      ref.invalidate(productDetailsProvider);
+      ref.invalidate(categoriesProvider);
+      ref.invalidate(heroSlidesProvider);
+      ref.invalidate(adminDashboardProvider);
+
+      if (!mounted) return;
+
+      Navigator.pop(context, true);
     } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$error')));
-      }
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Không thể lưu sản phẩm: $error')));
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) {
+        setState(() => _saving = false);
+      }
     }
   }
 
@@ -604,6 +648,22 @@ class _ProductDialogState extends ConsumerState<_ProductDialog> {
     final parsed = int.tryParse(value?.trim() ?? '');
     if (parsed == null || parsed < 0) return 'Tồn kho không hợp lệ';
     return null;
+  }
+
+  String? _validateSpecifications(String? value) {
+    try {
+      final parsed = jsonDecode(
+        value == null || value.trim().isEmpty ? '{}' : value,
+      );
+
+      if (parsed is! Map<String, dynamic>) {
+        return 'Thông số phải là một JSON object, ví dụ {"RAM":"8 GB"}.';
+      }
+
+      return null;
+    } catch (_) {
+      return 'JSON không hợp lệ. Kiểm tra dấu ngoặc, dấu phẩy và dấu nháy kép.';
+    }
   }
 
   @override
@@ -654,11 +714,33 @@ class _ProductDialogState extends ConsumerState<_ProductDialog> {
                 ),
                 TextFormField(
                   controller: _description,
-                  maxLines: 3,
+                  minLines: 4,
+                  maxLines: 10,
                   decoration: const InputDecoration(
-                    labelText: 'Mô tả chi tiết',
+                    labelText: 'Thông tin chi tiết sản phẩm',
+                    alignLabelWithHint: true,
+                    hintText:
+                        'Nhập giới thiệu, tính năng và thông tin sản phẩm...',
                   ),
                 ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _specifications,
+                  validator: _validateSpecifications,
+                  minLines: 6,
+                  maxLines: 14,
+                  keyboardType: TextInputType.multiline,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  style: const TextStyle(fontFamily: 'monospace'),
+                  decoration: const InputDecoration(
+                    labelText: 'Thông số kỹ thuật (JSON)',
+                    alignLabelWithHint: true,
+                    border: OutlineInputBorder(),
+                    helperText: 'Mỗi thuộc tính gồm tên thông số và giá trị.',
+                  ),
+                ),
+                const SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(

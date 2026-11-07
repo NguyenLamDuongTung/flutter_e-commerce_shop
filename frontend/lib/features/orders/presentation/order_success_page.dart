@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -15,105 +16,253 @@ class OrderSuccessPage extends StatelessWidget {
     decimalDigits: 0,
   );
 
+  Future<void> _copy(BuildContext context, String label, String value) async {
+    try {
+      await Clipboard.setData(ClipboardData(text: value));
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Đã sao chép $label')));
+    } catch (_) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không thể sao chép tự động.')),
+      );
+    }
+  }
+
+  Widget _copyRow(
+    BuildContext context,
+    String label,
+    String value, {
+    String? copyValue,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label),
+                const SizedBox(height: 4),
+                SelectableText(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Sao chép $label',
+            onPressed: () => _copy(context, label, copyValue ?? value),
+            icon: const Icon(Icons.copy_outlined),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _line(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: Text(label)),
+          const SizedBox(width: 12),
+          Flexible(child: Text(value)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (order == null) {
+    final value = order;
+
+    if (value == null) {
       return Scaffold(
+        appBar: AppBar(title: const Text('Hóa đơn')),
         body: Center(
-          child: FilledButton(
-            onPressed: () => context.go('/'),
-            child: const Text('Quay lại cửa hàng'),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Không có dữ liệu hóa đơn trong phiên này.'),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => context.go('/'),
+                child: const Text('Quay lại cửa hàng'),
+              ),
+            ],
           ),
         ),
       );
     }
 
-    final value = order!;
     final bankTransfer = value.paymentMethod == 'bank_transfer';
+    final paid = value.paymentStatus == 'paid';
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Container(
-            width: 680,
-            padding: const EdgeInsets.all(36),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
-            child: Column(
-              children: [
-                const Icon(Icons.check_circle, size: 78, color: Colors.green),
-                const SizedBox(height: 18),
-                const Text('Đặt hàng thành công', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
-                const SizedBox(height: 8),
-                Text('Mã đơn hàng: ${value.orderNumber}', style: const TextStyle(fontSize: 17)),
-                const SizedBox(height: 28),
-                if (bankTransfer)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0F6FF),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFB8D8FF)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Thông tin chuyển khoản', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                        const SizedBox(height: 12),
-                        const Text('Ngân hàng: NOVA BANK'),
-                        const Text('Số tài khoản: 0123 456 789'),
-                        const Text('Chủ tài khoản: CONG TY NOVA STORE'),
-                        Text('Số tiền: ${_money.format(value.totalAmount)}'),
-                        Text('Nội dung: ${value.orderNumber}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                        const SizedBox(height: 10),
-                        const Text('Đơn hàng sẽ được xác nhận sau khi hệ thống nhận được thanh toán.'),
-                      ],
-                    ),
-                  )
-                else
-                  const Text(
-                    'Bạn sẽ thanh toán khi nhận hàng. Chúng tôi sẽ liên hệ để xác nhận đơn hàng.',
-                    textAlign: TextAlign.center,
-                  ),
-                const SizedBox(height: 28),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Sản phẩm',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                for (final item in value.items)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text('${item.productName} × ${item.quantity}'),
-                        ),
-                        Text(_money.format(item.lineTotal)),
-                      ],
-                    ),
-                  ),
-                const Divider(height: 30),
-                Row(
+      appBar: AppBar(
+        title: const Text('Hóa đơn đặt hàng'),
+        automaticallyImplyLeading: false,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(child: Text('Tổng thanh toán', style: Theme.of(context).textTheme.titleMedium)),
-                    Text(_money.format(value.totalAmount), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0066CC))),
+                    Text(
+                      'NOVA',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 4,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'HÓA ĐƠN ĐẶT HÀNG',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 20),
+                    _copyRow(context, 'Mã đơn hàng', value.orderNumber),
+                    const Divider(height: 28),
+                    Text(
+                      'Thông tin khách hàng',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    SelectableText(value.customerName),
+                    SelectableText(value.customerPhone),
+                    SelectableText(value.customerEmail),
+                    SelectableText(value.shippingAddress),
+                    if ((value.note ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text('Ghi chú: ${value.note}'),
+                    ],
+                    const Divider(height: 28),
+                    Text('Sản phẩm', style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 12),
+                    for (final item in value.items)
+                      _line(
+                        '${item.productName} × ${item.quantity}',
+                        _money.format(item.lineTotal),
+                      ),
+                    const Divider(height: 28),
+                    _line('Tạm tính', _money.format(value.subtotal)),
+                    _line(
+                      'Phí giao hàng',
+                      value.shippingFee == 0
+                          ? 'Miễn phí'
+                          : _money.format(value.shippingFee),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Tổng thanh toán: '
+                      '${_money.format(value.totalAmount)}',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const Divider(height: 32),
+                    if (bankTransfer) ...[
+                      Text(
+                        paid ? 'Đã thanh toán' : 'Quét QR để chuyển khoản',
+                        style: theme.textTheme.titleLarge,
+                      ),
+                      if (!paid) ...[
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Quét bằng ứng dụng ngân hàng. Nếu đang dùng '
+                          'điện thoại, lưu ảnh QR và chọn từ thư viện ảnh '
+                          'trong ứng dụng ngân hàng.',
+                        ),
+                        const SizedBox(height: 20),
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 320),
+                            child: Image.asset(
+                              'assets/images/bank_qr.jpeg',
+                              fit: BoxFit.contain,
+                              semanticLabel: 'QR Vietcombank',
+                              errorBuilder: (_, _, _) => const Padding(
+                                padding: EdgeInsets.all(20),
+                                child: Text(
+                                  'Không tải được QR. Vui lòng chuyển '
+                                  'khoản bằng thông tin bên dưới.',
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        const Text('Ngân hàng: Vietcombank'),
+                        const SizedBox(height: 8),
+                        const SelectableText(
+                          'Chủ tài khoản: NGUYEN LAM DUONG TUNG',
+                        ),
+                        _copyRow(context, 'Số tài khoản', '1031326798'),
+                        _copyRow(
+                          context,
+                          'Số tiền chuyển khoản',
+                          _money.format(value.totalAmount),
+                          copyValue: value.totalAmount.toStringAsFixed(0),
+                        ),
+                        _copyRow(
+                          context,
+                          'Nội dung chuyển khoản',
+                          value.orderNumber,
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'QR tài khoản cố định: vui lòng nhập đúng '
+                          'số tiền và mã đơn hàng ở trên.',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Trạng thái: Chờ xác nhận thanh toán.\n'
+                          'Cửa hàng sẽ kiểm tra giao dịch và xác nhận '
+                          'sau khi nhận được tiền.',
+                        ),
+                      ],
+                    ] else ...[
+                      Text(
+                        'Thanh toán khi nhận hàng (COD)',
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Bạn thanh toán cho nhân viên giao hàng '
+                        'khi nhận hàng.',
+                      ),
+                    ],
+                    const SizedBox(height: 28),
+                    FilledButton(
+                      onPressed: () => context.go('/'),
+                      child: const Text('Tiếp tục mua sắm'),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 28),
-                FilledButton(
-                  onPressed: () => context.go('/'),
-                  style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 16)),
-                  child: const Text('Tiếp tục mua sắm'),
-                ),
-              ],
+              ),
             ),
           ),
         ),

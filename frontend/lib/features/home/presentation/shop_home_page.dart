@@ -7,8 +7,22 @@ import '../../products/presentation/widgets/product_card.dart';
 import '../../products/presentation/widgets/product_skeleton.dart';
 import 'widgets/hero_banner.dart';
 
+const _categoryLabels = <String, String>{
+  'phones': 'Điện thoại',
+  'laptops': 'Máy tính',
+  'tablets': 'Máy tính bảng',
+  'watches': 'Đồng hồ',
+  'accessories': 'Phụ kiện',
+  'audio': 'Âm thanh',
+};
+
 class ShopHomePage extends ConsumerStatefulWidget {
-  const ShopHomePage({super.key});
+  const ShopHomePage({
+    super.key,
+    this.categorySlug,
+  });
+
+  final String? categorySlug;
 
   @override
   ConsumerState<ShopHomePage> createState() => _ShopHomePageState();
@@ -29,7 +43,10 @@ class _ShopHomePageState extends ConsumerState<ShopHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = ref.watch(categoriesProvider);
+    final categorySlug = widget.categorySlug;
+    final categories = categorySlug == null && _search.isEmpty
+        ? ref.watch(categoriesProvider)
+        : null;
     final user = ref.watch(authControllerProvider).value;
 
     return Scaffold(
@@ -40,10 +57,12 @@ class _ShopHomePageState extends ConsumerState<ShopHomePage> {
             _StoreHeader(
               searchController: _searchController,
               userName: user?.fullName,
+              categorySlug: categorySlug,
               onSearch: () {
-                setState(() {
-                  _search = _searchController.text.trim();
-                });
+                setState(() => _search = _searchController.text.trim());
+                if (_scrollController.hasClients) {
+                  _scrollController.jumpTo(0);
+                }
               },
               onLogin: () => context.go('/login'),
               onLogout: () async {
@@ -54,13 +73,25 @@ class _ShopHomePageState extends ConsumerState<ShopHomePage> {
               child: RefreshIndicator(
                 onRefresh: () async {
                   ref.invalidate(categoriesProvider);
+                  ref.invalidate(productsProvider);
                 },
                 child: ListView(
                   controller: _scrollController,
                   children: [
-                    const HeroBanner(),
+                    if (categorySlug == null) const HeroBanner(),
                     const SizedBox(height: 42),
-                    if (_search.isNotEmpty)
+                    if (categorySlug != null)
+                      _ProductSection(
+                        title: _categoryLabels[categorySlug] ?? 'Sản phẩm',
+                        request: (
+                          category: categorySlug,
+                          search: _search,
+                          featured: null,
+                          limit: 48,
+                        ),
+                        showCategoryLink: false,
+                      )
+                    else if (_search.isNotEmpty)
                       _ProductSection(
                         title: 'Kết quả tìm kiếm',
                         request: (
@@ -71,7 +102,7 @@ class _ShopHomePageState extends ConsumerState<ShopHomePage> {
                         ),
                       )
                     else
-                      categories.when(
+                      categories!.when(
                         loading: () => const Column(
                           children: [
                             _LoadingSection(),
@@ -128,6 +159,7 @@ class _StoreHeader extends StatelessWidget {
   const _StoreHeader({
     required this.searchController,
     required this.userName,
+    required this.categorySlug,
     required this.onSearch,
     required this.onLogin,
     required this.onLogout,
@@ -135,6 +167,7 @@ class _StoreHeader extends StatelessWidget {
 
   final TextEditingController searchController;
   final String? userName;
+  final String? categorySlug;
   final VoidCallback onSearch;
   final VoidCallback onLogin;
   final VoidCallback onLogout;
@@ -152,13 +185,16 @@ class _StoreHeader extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(22, 14, 22, 10),
                 child: Row(
                   children: [
-                    const Text(
-                      'NOVA',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 25,
-                        letterSpacing: 4,
-                        fontWeight: FontWeight.w900,
+                    TextButton(
+                      onPressed: () => context.go('/'),
+                      child: const Text(
+                        'NOVA',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 25,
+                          letterSpacing: 4,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 28),
@@ -179,7 +215,7 @@ class _StoreHeader extends StatelessWidget {
                     ),
                     const SizedBox(width: 22),
                     TextButton.icon(
-                      onPressed: () {},
+                      onPressed: () => context.go('/cart'),
                       icon: const Icon(
                         Icons.shopping_cart_outlined,
                         color: Colors.white,
@@ -209,14 +245,24 @@ class _StoreHeader extends StatelessWidget {
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: const [
-                    _HeaderItem(icon: Icons.menu, label: 'Dịch vụ'),
-                    _HeaderItem(label: 'Điện thoại'),
-                    _HeaderItem(label: 'Máy tính'),
-                    _HeaderItem(label: 'Máy tính bảng'),
-                    _HeaderItem(label: 'Đồng hồ'),
-                    _HeaderItem(label: 'Phụ kiện'),
-                    _HeaderItem(label: 'Âm thanh'),
+                  children: [
+                    for (final entry in _categoryLabels.entries)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: TextButton(
+                          onPressed: () => context.go('/categories/${entry.key}'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: categorySlug == entry.key
+                                ? Colors.white24
+                                : Colors.transparent,
+                          ),
+                          child: Text(
+                            entry.value,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -228,32 +274,14 @@ class _StoreHeader extends StatelessWidget {
   }
 }
 
-class _HeaderItem extends StatelessWidget {
-  const _HeaderItem({required this.label, this.icon});
-
-  final String label;
-  final IconData? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: TextButton.icon(
-        onPressed: () {},
-        icon: icon == null
-            ? const SizedBox.shrink()
-            : Icon(icon, color: Colors.white),
-        label: Text(
-          label,
-          style: const TextStyle(color: Colors.white, fontSize: 16),
-        ),
-      ),
-    );
-  }
-}
-
 class _ProductSection extends ConsumerWidget {
-  const _ProductSection({required this.title, required this.request});
+  const _ProductSection({
+    required this.title,
+    required this.request,
+    this.showCategoryLink = true,
+  });
+
+  final bool showCategoryLink;
 
   final String title;
   final ProductRequest request;
@@ -299,17 +327,26 @@ class _ProductSection extends ConsumerWidget {
                   return _ProductGrid(
                     children: [
                       for (final product in items)
-                        ProductCard(product: product, onPressed: () {}),
+                        ProductCard(
+                          product: product,
+                          onPressed: () => context.go(
+                            '/products/${Uri.encodeComponent(product.slug)}',
+                          ),
+                        ),
                     ],
                   );
                 },
               ),
-              const SizedBox(height: 26),
-              OutlinedButton.icon(
-                onPressed: () {},
-                label: Text('Xem tất cả $title'),
-                icon: const Icon(Icons.chevron_right),
-              ),
+              if (showCategoryLink && request.category != null) ...[
+                const SizedBox(height: 26),
+                OutlinedButton.icon(
+                  onPressed: () => context.go(
+                    '/categories/${Uri.encodeComponent(request.category!)}',
+                  ),
+                  label: Text('Xem tất cả $title'),
+                  icon: const Icon(Icons.chevron_right),
+                ),
+              ],
             ],
           ),
         ),

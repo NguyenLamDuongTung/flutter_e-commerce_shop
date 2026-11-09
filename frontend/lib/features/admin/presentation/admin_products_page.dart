@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -7,12 +9,9 @@ import 'package:intl/intl.dart';
 
 import '../../../app/providers.dart';
 import '../../../core/config/app_config.dart';
+import '../../products/presentation/product_detail_page.dart';
 import '../data/admin_product_repository.dart';
 import '../domain/admin_product.dart';
-
-import 'dart:convert';
-
-import '../../products/presentation/product_detail_page.dart';
 
 class AdminProductsPage extends ConsumerStatefulWidget {
   const AdminProductsPage({super.key});
@@ -68,11 +67,16 @@ class _AdminProductsPageState extends ConsumerState<AdminProductsPage> {
       barrierDismissible: false,
       builder: (_) => _ProductDialog(product: product),
     );
-    if (saved == true) {
-      _page = 1;
-      await _load();
-      ref.invalidate(adminDashboardProvider);
-    }
+    if (!mounted || saved != true) return;
+
+    ref.invalidate(productsProvider);
+    ref.invalidate(productDetailsProvider);
+    ref.invalidate(categoriesProvider);
+    ref.invalidate(heroSlidesProvider);
+    ref.invalidate(adminDashboardProvider);
+
+    _page = 1;
+    await _load();
   }
 
   Future<void> _delete(AdminProduct product) async {
@@ -260,71 +264,84 @@ class _ProductRow extends StatelessWidget {
   final VoidCallback delete;
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              width: 72,
-              height: 72,
-              child: product.primaryImage == null
-                  ? const ColoredBox(
-                      color: Color(0xFFE5E7EB),
-                      child: Icon(Icons.image_outlined),
-                    )
-                  : CachedNetworkImage(
-                      imageUrl: AppConfig.resolveImageUrl(product.primaryImage),
-                      fit: BoxFit.cover,
-                      errorWidget: (_, _, _) =>
-                          const Icon(Icons.broken_image_outlined),
+  Widget build(BuildContext context) {
+    final imageUrl = AppConfig.resolveImageUrl(product.primaryImage);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                width: 72,
+                height: 72,
+                child: ColoredBox(
+                  color: const Color(0xFFE5E7EB),
+                  child: imageUrl.isEmpty
+                      ? const Icon(Icons.image_outlined)
+                      : CachedNetworkImage(
+                          key: ValueKey(imageUrl),
+                          imageUrl: imageUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (_, _) => const Center(
+                            child: SizedBox.square(
+                              dimension: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                          errorWidget: (_, _, _) => const Tooltip(
+                            message: 'Không tải được ảnh sản phẩm',
+                            child: Icon(Icons.broken_image_outlined),
+                          ),
+                        ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
                     ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
                   ),
-                ),
-                Text(
-                  '${product.categoryName} • Kho: ${product.stockQuantity}',
-                  style: const TextStyle(color: Color(0xFF64748B)),
-                ),
-                Text(
-                  NumberFormat.currency(
-                    locale: 'vi_VN',
-                    symbol: '₫',
-                    decimalDigits: 0,
-                  ).format(product.price),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ],
+                  Text(
+                    '${product.categoryName} • Kho: ${product.stockQuantity}',
+                    style: const TextStyle(color: Color(0xFF64748B)),
+                  ),
+                  Text(
+                    NumberFormat.currency(
+                      locale: 'vi_VN',
+                      symbol: '₫',
+                      decimalDigits: 0,
+                    ).format(product.price),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Switch(value: product.isActive, onChanged: (_) => toggle()),
-          IconButton(
-            onPressed: edit,
-            tooltip: 'Sửa',
-            icon: const Icon(Icons.edit_outlined),
-          ),
-          IconButton(
-            onPressed: delete,
-            tooltip: 'Xóa',
-            icon: const Icon(Icons.delete_outline, color: Colors.red),
-          ),
-        ],
+            Switch(value: product.isActive, onChanged: (_) => toggle()),
+            IconButton(
+              onPressed: edit,
+              tooltip: 'Sửa',
+              icon: const Icon(Icons.edit_outlined),
+            ),
+            IconButton(
+              onPressed: delete,
+              tooltip: 'Xóa',
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _ProductDialog extends ConsumerStatefulWidget {
@@ -604,13 +621,6 @@ class _ProductDialogState extends ConsumerState<_ProductDialog> {
                 .map((file) => (name: file.name, bytes: file.bytes))
                 .toList(),
           );
-
-      // Refresh public product data in the current app session.
-      ref.invalidate(productsProvider);
-      ref.invalidate(productDetailsProvider);
-      ref.invalidate(categoriesProvider);
-      ref.invalidate(heroSlidesProvider);
-      ref.invalidate(adminDashboardProvider);
 
       if (!mounted) return;
 

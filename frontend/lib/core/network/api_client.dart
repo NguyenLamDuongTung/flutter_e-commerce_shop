@@ -177,7 +177,7 @@ class ApiClient {
 
     final headers = <String, String>{
       'Accept': 'application/json',
-      'Content-Type': 'application/json',
+      if (body != null) 'Content-Type': 'application/json',
     };
 
     if (authenticated) {

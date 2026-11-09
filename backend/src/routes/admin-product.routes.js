@@ -266,6 +266,7 @@ router.post(
   uploadProductImages,
   async (request, response, next) => {
     let connection;
+    let committed = false;
 
     try {
       const input = parseProductInput(request.body);
@@ -332,9 +333,10 @@ router.post(
         );
       }
 
-      await connection.commit();
+      const product = await getProduct(result.insertId, connection);
 
-      const product = await getProduct(result.insertId);
+      await connection.commit();
+      committed = true;
 
       response.status(201).json({
         success: true,
@@ -342,12 +344,18 @@ router.post(
         data: product,
       });
     } catch (error) {
-      if (connection) {
-        await connection.rollback();
-      }
+      if (!committed) {
+        if (connection) {
+          try {
+            await connection.rollback();
+          } catch (rollbackError) {
+            console.error('Product save rollback failed:', rollbackError);
+          }
+        }
 
-      for (const file of request.files ?? []) {
-        await fs.unlink(file.path).catch(() => {});
+        for (const file of request.files ?? []) {
+          await fs.unlink(file.path).catch(() => {});
+        }
       }
 
       next(error);
@@ -362,6 +370,7 @@ router.put(
   uploadProductImages,
   async (request, response, next) => {
     let connection;
+    let committed = false;
 
     try {
       const productId = z.coerce
@@ -420,66 +429,66 @@ router.put(
         ],
       );
 
-      const [orderRows] = await connection.execute(
-        `
-          SELECT COALESCE(MAX(display_order), -1) AS maximum
+      if (files.length > 0) {
+        const [orderRows] = await connection.execute(
+          `SELECT COALESCE(MAX(display_order), -1) AS maximum
           FROM product_images
-          WHERE product_id = ?
-        `,
-        [productId],
-      );
-
-      const startingOrder =
-        Number(orderRows[0].maximum) + 1;
-
-      for (let index = 0; index < files.length; index += 1) {
-        const file = files[index];
-
-        const [primaryRows] = await connection.execute(
-          `
-            SELECT id
-            FROM product_images
-            WHERE product_id = ? AND is_primary = TRUE
-            LIMIT 1
-          `,
+          WHERE product_id = ?`,
           [productId],
         );
 
+        const startingOrder = Number(orderRows[0].maximum) + 1;
+
         await connection.execute(
-          `
-            INSERT INTO product_images (
+          `UPDATE product_images
+          SET is_primary = FALSE
+          WHERE product_id = ? AND is_primary = TRUE`,
+          [productId],
+        );
+
+        for (const [index, file] of files.entries()) {
+          await connection.execute(
+            `INSERT INTO product_images (
               product_id,
               image_url,
               alt_text,
               display_order,
               is_primary
-            )
-            VALUES (?, ?, ?, ?, ?)
-          `,
-          [
-            productId,
-            `/uploads/products/${file.filename}`,
-            input.name,
-            startingOrder + index,
-            primaryRows.length === 0 && index === 0,
-          ],
-        );
+            ) VALUES (?, ?, ?, ?, ?)`,
+            [
+              productId,
+              `/uploads/products/${file.filename}`,
+              input.name,
+              startingOrder + index,
+              index === 0,
+            ],
+          );
+        }
       }
 
+      const product = await getProduct(productId, connection);
+
       await connection.commit();
+      committed = true;
 
       response.json({
         success: true,
         message: 'Product updated successfully.',
-        data: await getProduct(productId),
+        data: product,
       });
     } catch (error) {
-      if (connection) {
-        await connection.rollback();
-      }
+      if (!committed) {
+        if (connection) {
+          try {
+            await connection.rollback();
+          } catch (rollbackError) {
+            console.error('Product save rollback failed:', rollbackError);
+          }
+        }
 
-      for (const file of request.files ?? []) {
-        await fs.unlink(file.path).catch(() => {});
+        for (const file of request.files ?? []) {
+          await fs.unlink(file.path).catch(() => {});
+        }
       }
 
       next(error);
